@@ -9,14 +9,16 @@
 
 #include <Geode/Geode.hpp>
 
-namespace cw::mod_cmmts {
+#include <Geode/ui/Style.hpp>
+
+namespace cw::modcmmts {
     enum class CommentUserStatus : uint8_t {
         Owner,
         Staff,
     };
 
     namespace ui {
-        class CommentReportPopup final : public geode::Popup, private base::InputLimiter {
+        class CommentReportPopup final : public geode::GeodePopup, private base::InputLimiter {
             using Callback = geode::Function<void(Comment const&, std::string)>;
 
         private:

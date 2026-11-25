@@ -1,11 +1,13 @@
 #include "../GeodeMod.hpp"
 
-#include <Util.h>
+#include <cw.h>
+
+#include <rhatt/prelude.h>
 
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;
-using namespace cw::mod_cmmts;
+using namespace cw::modcmmts;
 
 Result<GeodeModDev> matjson::Serialize<GeodeModDev>::fromJson(matjson::Value const& value) {
     GeodeModDev out;
@@ -15,7 +17,7 @@ Result<GeodeModDev> matjson::Serialize<GeodeModDev>::fromJson(matjson::Value con
     GEODE_UNWRAP_INTO(out.owner, value["is_owner"].asBool());
 
     return Ok(std::move(out));
-};
+}
 
 matjson::Value matjson::Serialize<GeodeModDev>::toJson(GeodeModDev const& value) {
     Value out;
@@ -24,7 +26,7 @@ matjson::Value matjson::Serialize<GeodeModDev>::toJson(GeodeModDev const& value)
     out["is_owner"] = value.owner;
 
     return out;
-};
+}
 
 Result<GeodeModVersion> matjson::Serialize<GeodeModVersion>::fromJson(matjson::Value const& value) {
     GeodeModVersion out;
@@ -33,7 +35,7 @@ Result<GeodeModVersion> matjson::Serialize<GeodeModVersion>::fromJson(matjson::V
     GEODE_UNWRAP_INTO(out.version, value["version"].asString());
 
     return Ok(std::move(out));
-};
+}
 
 matjson::Value matjson::Serialize<GeodeModVersion>::toJson(GeodeModVersion const& value) {
     Value out;
@@ -41,17 +43,17 @@ matjson::Value matjson::Serialize<GeodeModVersion>::toJson(GeodeModVersion const
     out["version"] = value.version;
 
     return out;
-};
+}
 
 Result<GeodeMod> matjson::Serialize<GeodeMod>::fromJson(matjson::Value const& value) {
     GeodeMod out;
 
     GEODE_UNWRAP_INTO(out.id, value["id"].asString());
 
-    GEODE_UNWRAP_INTO(auto const devs, value["developers"].asArray());
-    out.developers.reserve(devs.size());
+    GEODE_UNWRAP_INTO(auto const _developers, value["developers"].asArray());
+    out.developers.reserve(_developers.size());
 
-    for (auto const& [k, value] : devs) {
+    for (auto const& [k, value] : _developers) {
         GEODE_UNWRAP_INTO(auto dev, value.as<GeodeModDev>());
         out.developers.push_back(std::move(dev));
     };
@@ -63,7 +65,7 @@ Result<GeodeMod> matjson::Serialize<GeodeMod>::fromJson(matjson::Value const& va
     };
 
     return Ok(std::move(out));
-};
+}
 
 matjson::Value matjson::Serialize<GeodeMod>::toJson(GeodeMod const& value) {
     Value out;
@@ -72,4 +74,4 @@ matjson::Value matjson::Serialize<GeodeMod>::toJson(GeodeMod const& value) {
     out["versions"] = std::vector(value.versions.begin(), value.versions.end());
 
     return out;
-};
+}

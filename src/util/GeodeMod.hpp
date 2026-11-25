@@ -2,7 +2,7 @@
 
 #include <Geode/Geode.hpp>
 
-namespace cw::mod_cmmts {
+namespace cw::modcmmts {
     struct GeodeModDev final {
         std::string username;
         std::string displayName;
@@ -22,19 +22,19 @@ namespace cw::mod_cmmts {
 };
 
 template <>
-struct matjson::Serialize<cw::mod_cmmts::GeodeModDev> final {
-    static geode::Result<cw::mod_cmmts::GeodeModDev> fromJson(matjson::Value const& value);
-    static matjson::Value toJson(cw::mod_cmmts::GeodeModDev const& value);
+struct matjson::Serialize<cw::modcmmts::GeodeModDev> final {
+    static geode::Result<cw::modcmmts::GeodeModDev> fromJson(matjson::Value const& value);
+    static matjson::Value toJson(cw::modcmmts::GeodeModDev const& value);
 };
 
 template <>
-struct matjson::Serialize<cw::mod_cmmts::GeodeModVersion> final {
-    static geode::Result<cw::mod_cmmts::GeodeModVersion> fromJson(matjson::Value const& value);
-    static matjson::Value toJson(cw::mod_cmmts::GeodeModVersion const& value);
+struct matjson::Serialize<cw::modcmmts::GeodeModVersion> final {
+    static geode::Result<cw::modcmmts::GeodeModVersion> fromJson(matjson::Value const& value);
+    static matjson::Value toJson(cw::modcmmts::GeodeModVersion const& value);
 };
 
 template <>
-struct matjson::Serialize<cw::mod_cmmts::GeodeMod> final {
-    static geode::Result<cw::mod_cmmts::GeodeMod> fromJson(matjson::Value const& value);
-    static matjson::Value toJson(cw::mod_cmmts::GeodeMod const& value);
+struct matjson::Serialize<cw::modcmmts::GeodeMod> final {
+    static geode::Result<cw::modcmmts::GeodeMod> fromJson(matjson::Value const& value);
+    static matjson::Value toJson(cw::modcmmts::GeodeMod const& value);
 };

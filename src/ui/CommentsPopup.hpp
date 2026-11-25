@@ -9,7 +9,9 @@
 
 #include <Geode/Geode.hpp>
 
-namespace cw::mod_cmmts {
+#include <Geode/ui/Style.hpp>
+
+namespace cw::modcmmts {
     struct CommentRequest final {
         std::string modId;
         std::string content;
@@ -46,13 +48,7 @@ namespace cw::mod_cmmts {
             static CommentModNode* create(std::string id, std::optional<GeodeMod> mod = std::nullopt);
         };
 
-        class CommentsPopup final : public geode::Popup, private base::InputLimiter {
-            struct LinkButton final {
-                std::string id;
-                std::string sprite;
-                geode::Button::ButtonCallback callback;
-            };
-
+        class CommentsPopup final : public geode::GeodePopup, private base::InputLimiter {
         private:
             std::string m_modId;
             bool m_geodeTheme = false;
@@ -61,8 +57,8 @@ namespace cw::mod_cmmts {
 
             static geode::utils::StringMap<GeodeMod> s_indexedMods;
 
-            uint16_t m_page = 1;
-            uint16_t m_maxPage = m_page + 1;
+            uint64_t m_page = 1;
+            uint64_t m_maxPage = 1;
 
             geode::Button* m_pageNextBtn = nullptr;
             geode::Button* m_pagePrevBtn = nullptr;
@@ -115,7 +111,7 @@ namespace cw::mod_cmmts {
 };
 
 template <>
-struct matjson::Serialize<cw::mod_cmmts::CommentRequest> final {
-    static geode::Result<cw::mod_cmmts::CommentRequest> fromJson(matjson::Value const& value);
-    static matjson::Value toJson(cw::mod_cmmts::CommentRequest const& value);
+struct matjson::Serialize<cw::modcmmts::CommentRequest> final {
+    static geode::Result<cw::modcmmts::CommentRequest> fromJson(matjson::Value const& value);
+    static matjson::Value toJson(cw::modcmmts::CommentRequest const& value);
 };

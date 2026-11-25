@@ -1,6 +1,8 @@
 #include "../CommentUI.hpp"
 
-#include <Util.h>
+#include <cw.h>
+
+#include <rhatt/prelude.h>
 
 #include <cue/PlayerIcon.hpp>
 
@@ -9,9 +11,9 @@
 #include <Geode/utils/ColorProvider.hpp>
 
 using namespace geode::prelude;
-using namespace cw::mod_cmmts;
+using namespace cw::modcmmts;
 
-namespace cw::mod_cmmts {
+namespace cw::modcmmts {
     struct CommentUserStatusData final {
         std::string name;
         std::string description;
@@ -28,7 +30,7 @@ namespace cw::mod_cmmts {
             auto staff = userRes.unwrap().staff;
             log::trace("Current user {} staff", staff ? "is" : "is NOT");
             return staff;
-        };
+        }
 
         static CommentUserStatusData const& getDataForStatus(CommentUserStatus status) noexcept {
             static auto const owner = CommentUserStatusData{
@@ -49,37 +51,39 @@ namespace cw::mod_cmmts {
                 case CommentUserStatus::Staff: return staff;
                 case CommentUserStatus::Owner: return owner;
             };
-        };
+        }
     };
 };
 
 bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeTheme) {
     m_callback = std::move(cb);
 
-    if (!Popup::init(300.f, 185.f, geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
+    if (!GeodePopup::init(300.0f, 185.0f)) return false;
 
     setID("report-popup"_spr);
     setTitle(fmt::format("Report {}", cmmt.author.username));
 
     setCloseButtonSpr(
         CircleButtonSprite::createWithSpriteFrameName(
-            "geode.loader/close.png",
+            "close.png"_gode,
             0.875f,
-            geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
-        0.825f);
+            geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green
+        ),
+        0.825f
+    );
 
     auto cmmtNode = CommentItem::create(cmmt, m_mainLayer->getScaledContentWidth() * 0.925f, false, geodeTheme);
-    m_mainLayer->addChildAtPosition(cmmtNode, Anchor::Center, {0.f, -12.5f});
+    m_mainLayer->addChildAtPosition(cmmtNode, Anchor::Center, { 0.0f, -12.5f });
 
     auto label = Label::createRich("If you believe this user's comment <cr>breaks our rules</c>, <cy>describe why using the text box below</c>. Thank you!", cw::ui::font::chat);
     label->setScale(0.675f);
-    label->setAnchorPoint({0.5, 1});
+    label->setAnchorPoint({ 0.5, 1 });
     label->setAlignment(Label::Alignment::Center);
     label->setMaxWidth((m_mainLayer->getScaledContentWidth() - 37.5f) * 1.425f);
 
-    m_mainLayer->addChildAtPosition(label, Anchor::Top, {0.f, -32.5f});
+    m_mainLayer->addChildAtPosition(label, Anchor::Top, { 0.0f, -32.5f });
 
-    m_inputBox = TextInput::create(m_mainLayer->getScaledContentWidth() - 25.f, "Tell us about this commment...", cw::ui::font::chat);
+    m_inputBox = TextInput::create(m_mainLayer->getScaledContentWidth() - 25.0f, "Tell us about this commment...", cw::ui::font::chat);
     m_inputBox->setID("description-input");
     m_inputBox->setMaxCharCount(impl::maxReportChars);
     m_inputBox->setContentHeight(m_inputBox->getScaledContentHeight() * 1.5f);
@@ -89,22 +93,23 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
     setMildLimitWarning(34);
     setModerateLimitWarning(42);
 
-    m_mainLayer->addChildAtPosition(m_inputBox, Anchor::Center, {0.f, -27.5f});
+    m_mainLayer->addChildAtPosition(m_inputBox, Anchor::Center, { 0.0f, -27.5f });
 
     auto warning = Label::createRich("<co>False reports</c> will most likely result in <cr>action taken on your own account</c>, please be mindful of the reports you send!", cw::ui::font::chat);
     warning->setScale(0.5f);
-    warning->setAnchorPoint({0.5, 1});
+    warning->setAnchorPoint({ 0.5, 1 });
     warning->setAlignment(Label::Alignment::Center);
     warning->setMaxWidth((m_mainLayer->getScaledContentWidth() - 32.5f) * 1.75f);
 
-    m_mainLayer->addChildAtPosition(warning, Anchor::Center, {0.f, -57.5f});
+    m_mainLayer->addChildAtPosition(warning, Anchor::Center, { 0.0f, -57.5f });
 
     auto sendBtn = Button::createWithNode(
         ButtonSprite::create(
             "Submit",
             cw::ui::font::gold,
-            geodeTheme ? "geode.loader/GE_button_05.png" : "GJ_button_01.png",
-            0.875f),
+            geodeTheme ? "GE_button_05.png"_gode : "GJ_button_01.png",
+            0.875f
+        ),
         [this, &cmmt](Button* sender) {
             auto inputStr = str::trim(m_inputBox->getString());
 
@@ -112,7 +117,8 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
             if (inputStr.empty()) return Notification::create("Comment cannot be empty.", NotificationIcon::Error)->show();
 
             m_callback(cmmt, std::move(inputStr));
-        });
+        }
+    );
     sendBtn->setID("submit-idea-btn");
     sendBtn->setScale(0.75f);
 
@@ -120,19 +126,21 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
 
     auto rulesBtn = Button::createWithNode(
         CircleButtonSprite::createWithSpriteFrameName(
-            "geode.loader/news.png",
+            "news.png"_gode,
             0.75f,
-            geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
+            geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green
+        ),
         [](Button* sender) {
             popups::showRules();
-        });
+        }
+    );
     rulesBtn->setID("comment-rules-btn");
     rulesBtn->setScale(0.625f);
 
     m_mainLayer->addChildAtPosition(rulesBtn, Anchor::BottomRight, {}, false);
 
     return true;
-};
+}
 
 CommentReportPopup* CommentReportPopup::create(Comment const& cmmt, Callback&& cb, bool geodeTheme) {
     auto ret = new CommentReportPopup();
@@ -143,7 +151,7 @@ CommentReportPopup* CommentReportPopup::create(Comment const& cmmt, Callback&& c
 
     delete ret;
     return nullptr;
-};
+}
 
 void CommentItem::addBadge(CommentUserStatus type) {
     auto const& info = impl::getDataForStatus(type);
@@ -156,14 +164,16 @@ void CommentItem::addBadge(CommentUserStatus type) {
                 fmt::format("<cy>{}</c> {}", m_comment.author.username, info.description),
                 "OK",
                 nullptr,
-                nullptr);
-        });
+                nullptr
+            );
+        }
+    );
     btn->setID("badge-info-btn");
 
     cue::rescaleToMatch(btn, 12.5f);
 
     m_userMenu->addChild(btn);
-};
+}
 
 void CommentItem::addVoteNodes(CCNode* to, Button*& btn, Ref<Label>& label, CommentVote type) {
     auto like = type == CommentVote::Like;
@@ -178,7 +188,8 @@ void CommentItem::addVoteNodes(CCNode* to, Button*& btn, Ref<Label>& label, Comm
         [this, type](auto) {
             log::debug("current vote is {}", m_comment.myVote);
             voteCallback((m_comment.myVote == static_cast<int8_t>(type)) ? CommentVote::None : type);
-        });
+        }
+    );
     btn->setID(like ? "like-btn" : "dislike-btn");
     btn->setScale(0.625f);
 
@@ -187,7 +198,7 @@ void CommentItem::addVoteNodes(CCNode* to, Button*& btn, Ref<Label>& label, Comm
     btn->setEnabled(argon::signedIn());
 
     to->updateLayout();
-};
+}
 
 arc::Future<cw::WebRes> CommentItem::sendVote(CommentVote vote) {
     CW_ARGON_UNWRAP(auto token);
@@ -199,56 +210,53 @@ arc::Future<cw::WebRes> CommentItem::sendVote(CommentVote vote) {
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .bodyJSON(body);
 
-    co_return request::parse(co_await req.put("/v1/comments/vote"_api));
-};
+    co_return cw::request::parse(co_await req.put("/v2/comments/vote"_api));
+}
 
 bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme) {
     m_comment = std::move(cmmt);
 
     if (!CCNode::init()) return false;
 
-    setAnchorPoint({0.5, 0});
-    setContentSize({width, 47.5f});
+    setAnchorPoint({ 0.5, 0 });
+    setContentSize({ width, 47.5f });
 
     auto bg = cue::createBackground(
         getScaledContentSize(),
         {
             .opacity = static_cast<uint8_t>(isSelf() ? 125 : 100),
-            .texture = "geode.loader/white-square.png",
+            .texture = "white-square.png"_gode,
             .zOrder = -1,
             .id = "",
-        });
-    bg->setColor(ColorProvider::get()->color3b(
-        isSelf()  // :3c
-            ? geodeTheme
-                  ? "geode.loader/mod-developer-item-bg"
-                  : "geode.loader/mod-list-tab-selected-bg"
-            : geodeTheme
-                  ? "geode.loader/mod-list-tab-selected-bg"
-                  : "geode.loader/mod-developer-item-bg"));
+        }
+    );
+    bg->setColor(ColorProvider::get()->color3b(isSelf()  // :3c
+                                                   ?
+                                                   geodeTheme ? "mod-developer-item-bg"_gode : "mod-list-tab-selected-bg"_gode :
+                                                   geodeTheme ? "mod-list-tab-selected-bg"_gode : "mod-developer-item-bg"_gode));
 
     addChildAtPosition(bg, Anchor::Center);
 
     auto userMenuLayout = RowLayout::create()
-                              ->setGap(5.f)
+                              ->setGap(5.0f)
                               ->setAutoScale(false)
                               ->setAxisAlignment(AxisAlignment::Start)
-                              ->setAutoGrowAxis(0.f)
+                              ->setAutoGrowAxis(0.0f)
                               ->setGrowCrossAxis(true);
 
     m_userMenu = CCNode::create();
     m_userMenu->setID("username-container");
-    m_userMenu->setAnchorPoint({0, 1});
+    m_userMenu->setAnchorPoint({ 0, 1 });
     m_userMenu->setLayout(userMenuLayout);
 
-    addChildAtPosition(m_userMenu, Anchor::TopLeft, {5.f, -5.f});
+    addChildAtPosition(m_userMenu, Anchor::TopLeft, { 5.0f, -5.0f });
 
     auto& user = m_comment.author;
 
     auto icon = cue::PlayerIcon::create(user.iconType, user.icon, user.color1, user.color2, user.useGlow ? user.colorGlow : -1);
     icon->setID("player-icon");
 
-    cue::rescaleToMatch(icon, 15.f);
+    cue::rescaleToMatch(icon, 15.0f);
 
     m_userMenu->addChild(icon);
 
@@ -257,7 +265,8 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
         cw::ui::font::gold,
         [id = user.id, self = isSelf()](auto) {
             ProfilePage::create(id, self)->show();
-        });
+        }
+    );
     username->setID("view-player-btn");
     username->setScale(0.625f);
 
@@ -278,7 +287,7 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
 
         m_userMenu->addChild(mentionLabel);
 
-        bg->setColor({100, 200, 255});
+        bg->setColor({ 100, 200, 255 });
     };
 
     m_userMenu->updateLayout();
@@ -286,16 +295,16 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
     m_contentLabel = Label::create(m_comment.content, cw::ui::font::geode::regular);
     m_contentLabel->setID("comment-content-label");
     m_contentLabel->setScale(0.5f);
-    m_contentLabel->setAnchorPoint({0, 1});
+    m_contentLabel->setAnchorPoint({ 0, 1 });
     m_contentLabel->setBreakWords(true);
 
-    buttons
-        ? m_contentLabel->setMaxWidth(getScaledContentWidth() * 1.375f)  // <- cuts off way too early for some reason
-        : m_contentLabel->setLimitLabelWidth(getScaledContentWidth() - 32.5f, 0.5f);
+    buttons ? m_contentLabel->setMaxWidth(getScaledContentWidth() * 1.375f)  // <- cuts off way too early for some reason
+              :
+              m_contentLabel->setLimitLabelWidth(getScaledContentWidth() - 32.5f, 0.5f);
 
     m_contentLabel->setAlignment(Label::Alignment::Left);
 
-    addChildAtPosition(m_contentLabel, Anchor::TopLeft, {27.5f, -25.f});
+    addChildAtPosition(m_contentLabel, Anchor::TopLeft, { 27.5f, -25.0f });
 
     setContentHeight(getScaledContentHeight() + m_contentLabel->getScaledContentHeight() - 12.5f);
     bg->setContentSize(getScaledContentSize());
@@ -308,15 +317,15 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
                                     ->setAutoScale(false)
                                     ->setAxisReverse(true)
                                     ->setAxisAlignment(AxisAlignment::End)
-                                    ->setAutoGrowAxis(0.f)
+                                    ->setAutoGrowAxis(0.0f)
                                     ->setGrowCrossAxis(true);
 
         auto actionMenu = CCNode::create();
         actionMenu->setID("action-container");
-        actionMenu->setAnchorPoint({1, 1});
+        actionMenu->setAnchorPoint({ 1, 1 });
         actionMenu->setLayout(actionMenuLayout);
 
-        addChildAtPosition(actionMenu, Anchor::TopRight, {-3.75f, -3.75f});
+        addChildAtPosition(actionMenu, Anchor::TopRight, { -3.75f, -3.75f });
 
         if (argon::signedIn()) {
             Button* actionBtn = nullptr;
@@ -326,32 +335,37 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
                     CircleButtonSprite::createWithSpriteFrameName(
                         "GJ_hammerIcon_001.png",
                         0.95f,
-                        geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
+                        geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green
+                    ),
                     [this](auto) {
                         StaffPopup::create(m_comment, [](auto, auto, auto, auto) {})->show();
-                    });
+                    }
+                );
                 actionBtn->setID("staff-panel-btn");
             } else if (isSelf()) {
                 actionBtn = Button::createWithSpriteFrameName(
                     "GJ_trashBtn_001.png",
                     [this](auto) {
                         m_callback(CommentAction::Delete, m_comment);
-                    });
+                    }
+                );
                 actionBtn->setID("delete-comment-btn");
             } else {
                 actionBtn = Button::createWithNode(
                     CircleButtonSprite::createWithSpriteFrameName(
-                        "geode.loader/exclamation-red.png",
+                        "exclamation-red.png",
                         0.875f,
-                        geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
+                        geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green
+                    ),
                     [this](auto) {
                         m_callback(CommentAction::Report, m_comment);
-                    });
+                    }
+                );
                 actionBtn->setID("report-comment-btn");
             };
             actionBtn->setScale(0.925f);
 
-            cue::rescaleToMatch(actionBtn, 20.f);
+            cue::rescaleToMatch(actionBtn, 20.0f);
 
             actionMenu->addChild(actionBtn);
         };
@@ -366,15 +380,15 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
     auto time = Label::create(std::move(timeTxt), cw::ui::font::chat);
     time->setID("date-created-label");
     time->setScale(0.5f);
-    time->setAnchorPoint({1, 0});
+    time->setAnchorPoint({ 1, 0 });
     time->setAlignment(Label::Alignment::Right);
-    time->setColor({200, 200, 200});
+    time->setColor({ 200, 200, 200 });
     time->setOpacity(200);
 
-    addChildAtPosition(time, Anchor::BottomRight, {-5.f, 5.f});
+    addChildAtPosition(time, Anchor::BottomRight, { -5.0f, 5.0f });
 
     return true;
-};
+}
 
 void CommentItem::voteCallback(CommentVote type) {
     auto like = (type == CommentVote::Like);
@@ -447,20 +461,21 @@ void CommentItem::voteCallback(CommentVote type) {
             m_comment = std::move(cmmt);
 
             completed();
-        });
-};
+        }
+    );
+}
 
 bool CommentItem::isSelf() const noexcept {
     return GJAccountManager::sharedState()->m_accountID == m_comment.author.id;
-};
+}
 
 void CommentItem::setActionCallback(Callback&& cb) {
     m_callback = std::move(cb);
-};
+}
 
 Comment const& CommentItem::getComment() const noexcept {
     return m_comment;
-};
+}
 
 CommentItem* CommentItem::create(Comment cmmt, float width, bool buttons, bool geodeTheme) {
     auto ret = new CommentItem();
@@ -471,4 +486,4 @@ CommentItem* CommentItem::create(Comment cmmt, float width, bool buttons, bool g
 
     delete ret;
     return nullptr;
-};
+}

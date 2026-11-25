@@ -4,9 +4,11 @@
 
 #include <Geode/Geode.hpp>
 
-namespace cw::mod_cmmts {
+#include <Geode/ui/Style.hpp>
+
+namespace cw::modcmmts {
     namespace ui {
-        class StaffBanPopup final : public geode::Popup {
+        class StaffBanPopup final : public geode::GeodePopup {
             using Callback = geode::Function<void(asp::Duration)>;
 
         private:
@@ -20,7 +22,7 @@ namespace cw::mod_cmmts {
             static StaffBanPopup* create(CommentUser user, Callback&& cb);
         };
 
-        class StaffPopup final : public geode::Popup {
+        class StaffPopup final : public geode::GeodePopup {
             using Callback = geode::Function<void(CommentAction, Comment const&, std::optional<std::string>, std::optional<asp::Duration>)>;
 
         private:

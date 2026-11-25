@@ -2,11 +2,9 @@
 
 #include <util/Macros.h>
 
-#include <rhatt/prelude.h>
-
 #include <cue/Util.hpp>
 
-#include <argon/argon.hpp>
+#include <dankmeme.argon/argon.hpp>
 
 #include <ui/Include.h>
 
@@ -14,7 +12,7 @@
 
 #include <Geode/Geode.hpp>
 
-namespace cw::mod_cmmts {
+namespace cw::modcmmts {
     namespace popups {
         void showRules();
     };

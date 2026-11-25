@@ -1,15 +1,17 @@
 #include "../CommentsPopup.hpp"
 
-#include <Util.h>
+#include <cw.h>
+
+#include <rhatt/prelude.h>
 
 #include <cue/PlayerIcon.hpp>
 
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;
-using namespace cw::mod_cmmts;
+using namespace cw::modcmmts;
 
-namespace cw::mod_cmmts {
+namespace cw::modcmmts {
     namespace impl {
         static constexpr uint8_t commentWait = 30;
         static constexpr uint8_t refreshWait = 2;
@@ -18,7 +20,7 @@ namespace cw::mod_cmmts {
 
         static bool isBanned() {
             return SelfDirector::get()->isBanned();
-        };
+        }
     };
 };
 
@@ -30,7 +32,7 @@ Result<CommentRequest> matjson::Serialize<CommentRequest>::fromJson(matjson::Val
     GEODE_UNWRAP_INTO(out.icons, value["icons"].as<UserIcons>());
 
     return Ok(std::move(out));
-};
+}
 
 matjson::Value matjson::Serialize<CommentRequest>::toJson(CommentRequest const& value) {
     Value out;
@@ -39,24 +41,25 @@ matjson::Value matjson::Serialize<CommentRequest>::toJson(CommentRequest const& 
     out["icons"] = value.icons;
 
     return out;
-};
+}
 
 std::string CommentModNode::getModName() const {
     return m_dataOk ? m_data.versions[0].name : Loader::get()->getInstalledMod(m_id)->getName().c_str();
-};
+}
 
 std::vector<std::string> CommentModNode::getModDevs() const {
     std::vector<std::string> out;
 
     if (m_dataOk) {
         out.reserve(m_data.developers.size());
-        for (auto const& dev : m_data.developers) out.push_back(dev.displayName);
+        for (auto const& dev : m_data.developers)
+            out.push_back(dev.displayName);
     } else {
         out = Loader::get()->getInstalledMod(m_id)->getDevelopers();
     };
 
     return out;
-};
+}
 
 bool CommentModNode::init(std::string id, std::optional<GeodeMod> mod) {
     m_id = std::move(id);
@@ -69,19 +72,19 @@ bool CommentModNode::init(std::string id, std::optional<GeodeMod> mod) {
     if (!CCNode::init()) return false;
 
     auto layout = RowLayout::create()
-                      ->setGap(5.f)
+                      ->setGap(5.0f)
                       ->setAutoScale(false)
-                      ->setAutoGrowAxis(0.f)
+                      ->setAutoGrowAxis(0.0f)
                       ->setGrowCrossAxis(true);
 
-    setAnchorPoint({0.5, 1});
+    setAnchorPoint({ 0.5, 1 });
     setLayout(layout);
 
     if (m_dataOk) {
-        auto icon = LazySprite::create({18.75f, 18.75f});
+        auto icon = LazySprite::create({ 18.75f, 18.75f });
         icon->setID("logo");
         icon->setAutoResize(true);
-        icon->setAnchorPoint({0.5, 0.5});
+        icon->setAnchorPoint({ 0.5, 0.5 });
 
         icon->setLoadCallback([this, icon](Result<> res) {
             if (res.isOk()) cue::rescaleToMatch(icon, 18.75f);
@@ -102,8 +105,8 @@ bool CommentModNode::init(std::string id, std::optional<GeodeMod> mod) {
 
     auto name = Label::create(getModName(), cw::ui::font::big);
     name->setID("name");
-    name->setAnchorPoint({0, 0.5});
-    name->setLimitLabelWidth(165.f, 0.525f);
+    name->setAnchorPoint({ 0, 0.5 });
+    name->setLimitLabelWidth(165.0f, 0.525f);
 
     addChild(name);
 
@@ -120,15 +123,15 @@ bool CommentModNode::init(std::string id, std::optional<GeodeMod> mod) {
 
     auto devs = Label::create(std::move(devsText), cw::ui::font::gold);
     devs->setID("developers");
-    devs->setAnchorPoint({0, 0.5});
-    devs->setLimitLabelWidth(100.f, 0.425f);
+    devs->setAnchorPoint({ 0, 0.5 });
+    devs->setLimitLabelWidth(100.0f, 0.425f);
 
     addChild(devs);
 
     updateLayout();
 
     return true;
-};
+}
 
 CommentModNode* CommentModNode::create(std::string id, std::optional<GeodeMod> mod) {
     auto ret = new CommentModNode();
@@ -139,7 +142,7 @@ CommentModNode* CommentModNode::create(std::string id, std::optional<GeodeMod> m
 
     delete ret;
     return nullptr;
-};
+}
 
 asp::Instant CommentsPopup::s_lastComment;
 asp::Instant CommentsPopup::s_lastRefresh;
@@ -148,11 +151,11 @@ StringMap<GeodeMod> CommentsPopup::s_indexedMods;
 
 bool CommentsPopup::showInput() const {
     return argon::signedIn() && Loader::get()->isModInstalled(m_modId);
-};
+}
 
 arc::Future<cw::WebRes> CommentsPopup::getGeodeData() {
-    co_return request::parse(co_await request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", m_modId)));
-};
+    co_return cw::request::parse(co_await cw::request::base().get(fmt::format("https://api.geode-sdk.org/v1/mods/{}", m_modId)));
+}
 
 arc::Future<cw::WebRes> CommentsPopup::deleteComment(uint64_t id) {
     CW_ARGON_UNWRAP(auto token);
@@ -160,8 +163,8 @@ arc::Future<cw::WebRes> CommentsPopup::deleteComment(uint64_t id) {
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .param("comment", id);
 
-    co_return request::parse(co_await req.send("DELETE", "/v1/comments/delete"_api));
-};
+    co_return cw::request::parse(co_await req.send("DELETE", "/v2/comments/delete"_api));
+}
 
 arc::Future<cw::WebRes> CommentsPopup::reportComment(uint64_t id, std::string reason) {
     CW_ARGON_UNWRAP(auto token);
@@ -173,16 +176,16 @@ arc::Future<cw::WebRes> CommentsPopup::reportComment(uint64_t id, std::string re
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .bodyJSON(body);
 
-    co_return request::parse(co_await req.post("/v1/reports/send"_api));
-};
+    co_return cw::request::parse(co_await req.post("/v2/reports/send"_api));
+}
 
 arc::Future<cw::WebRes> CommentsPopup::getComments() {
-    auto req = request::base()
+    auto req = cw::request::base()
                    .param("mod", m_modId)
                    .param("page", m_page);
 
-    co_return request::parse(co_await req.get("/v1/comments/get"_api));
-};
+    co_return cw::request::parse(co_await req.get("/v2/comments/get"_api));
+}
 
 arc::Future<cw::WebRes> CommentsPopup::sendComment(std::string content) {
     CW_ARGON_UNWRAP(auto token);
@@ -195,13 +198,13 @@ arc::Future<cw::WebRes> CommentsPopup::sendComment(std::string content) {
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .bodyJSON(body);
 
-    co_return request::parse(co_await req.post("/v1/comments/send"_api));
-};
+    co_return cw::request::parse(co_await req.post("/v2/comments/send"_api));
+}
 
 void CommentsPopup::updatePageLabel() {
     auto count = m_commentList->m_contentLayer->getChildrenCount();
-    m_pageLabel->setText(fmt::format("Page {}, {} {}", m_page, count, str::plurals::appendS("comment", count)));
-};
+    m_pageLabel->setText(fmt::format("Page {}/{} ({} total)", m_page, m_maxPage, count));
+}
 
 void CommentsPopup::refreshComments(bool skipCooldown) {
     if (!skipCooldown) {
@@ -234,39 +237,20 @@ void CommentsPopup::refreshComments(bool skipCooldown) {
                     log::error("{}: {}", code, err);
                 };
 
-                auto arrayRes = std::move(res).getPayloadValue().asArray();
-                if (arrayRes.isErr()) return fallback(arrayRes.unwrapErr());
+                auto cmmtRes = std::move(res).getPayload<srv::CommentListResponse>();
+                if (cmmtRes.isErr()) return fallback(cmmtRes.unwrapErr());
 
-                auto const array = std::move(arrayRes).unwrap();
+                auto cmmt = std::move(cmmtRes).unwrap();
+                m_page = cmmt.pagination.page;
+                m_maxPage = cmmt.pagination.totalPages;
 
-                std::vector<Comment> comments;
-                comments.reserve(array.size());
-
-                for (auto const& val : array) {
-                    auto cmmtRes = val.as<Comment>();
-                    if (cmmtRes.isErr()) {
-                        log::error("Failed: {}", cmmtRes.unwrapErr());
-                        continue;
-                    };
-
-                    comments.push_back(std::move(cmmtRes).unwrap());
-                };
-
-                if (comments.empty() && m_page > 1) {
-                    m_page--;
-                    m_maxPage = m_page;
-
-                    return refreshComments(true);
-                };
-
-                m_maxPage = (array.size() == 15) ? m_page + 1 : m_page;
-
-                for (auto& comment : comments) {
+                for (auto& comment : cmmt.items) {
                     auto cell = CommentItem::create(
                         std::move(comment),
                         m_commentList->getScaledContentWidth(),
                         true,
-                        m_geodeTheme);
+                        m_geodeTheme
+                    );
                     cell->setActionCallback([this](CommentAction act, Comment const& cmmt) {
                         switch (act) {
                             default: return;
@@ -299,29 +283,32 @@ void CommentsPopup::refreshComments(bool skipCooldown) {
             m_refreshBtn->setVisible(true);
 
             m_loading->setVisible(false);
-        });
-};
+        }
+    );
+}
 
 bool CommentsPopup::init(std::string modId, bool geodeTheme) {
     m_modId = std::move(modId);
     m_geodeTheme = geodeTheme;
 
-    if (!Popup::init(430.f, 270.f, m_geodeTheme ? "geode.loader/GE_square01.png" : "GJ_square01.png")) return false;
+    if (!GeodePopup::init(430.0f, 270.0f)) return false;
 
     setID(fmt::format("popup-{}", modId));
 
     setCloseButtonSpr(
         CircleButtonSprite::createWithSpriteFrameName(
-            "geode.loader/close.png",
+            "close.png"_gode,
             0.875f,
-            m_geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
-        0.825f);
+            m_geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green
+        ),
+        0.825f
+    );
 
-    m_geodeLoading = LoadingSpinner::create(20.f);
-    m_mainLayer->addChildAtPosition(m_geodeLoading, Anchor::Top, {0.f, -18.75f});
+    m_geodeLoading = LoadingSpinner::create(20.0f);
+    m_mainLayer->addChildAtPosition(m_geodeLoading, Anchor::Top, { 0.0f, -18.75f });
 
     auto addModNode = [this](CommentModNode* modNode) {
-        m_mainLayer->addChildAtPosition(modNode, Anchor::Top, {0.f, -8.25f});
+        m_mainLayer->addChildAtPosition(modNode, Anchor::Top, { 0.0f, -8.25f });
         m_geodeLoading->setVisible(false);
     };
 
@@ -346,22 +333,24 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
 
                 auto modNode = CommentModNode::create(m_modId, s_indexedMods[m_modId]);
                 addModNode(modNode);
-            });
+            }
+        );
     };
 
     auto cmmtBorder = cue::createBackground(
-        {m_mainLayer->getScaledContentWidth() - 75.f, m_mainLayer->getScaledContentHeight() - 40.f},
+        { m_mainLayer->getScaledContentWidth() - 75.0f, m_mainLayer->getScaledContentHeight() - 40.0f },
         {
             .opacity = 255,
-            .texture = "geode.loader/black-square.png",
+            .texture = "black-square.png"_gode,
             .zOrder = 1,
             .id = "",
-        });
-    cmmtBorder->setAnchorPoint({0.5, 0});
+        }
+    );
+    cmmtBorder->setAnchorPoint({ 0.5, 0 });
 
-    m_mainLayer->addChildAtPosition(cmmtBorder, Anchor::Bottom, {0.f, 8.75f});
+    m_mainLayer->addChildAtPosition(cmmtBorder, Anchor::Bottom, { 0.0f, 8.75f });
 
-    m_loading = LoadingSpinner::create(50.f);
+    m_loading = LoadingSpinner::create(50.0f);
     m_loading->setID("loading-circle");
     m_loading->setVisible(false);
 
@@ -369,14 +358,14 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
 
     auto isShowInput = showInput();
 
-    m_commentList = ScrollLayer::create({cmmtBorder->getScaledContentWidth() - 12.5f, cmmtBorder->getScaledContentHeight() - (isShowInput ? 45.f : 25.f)});
+    m_commentList = ScrollLayer::create({ cmmtBorder->getScaledContentWidth() - 12.5f, cmmtBorder->getScaledContentHeight() - (isShowInput ? 45.0f : 25.0f) });
     m_commentList->setID("comment-list");
-    m_commentList->setAnchorPoint({0.5, 1});
+    m_commentList->setAnchorPoint({ 0.5, 1 });
     m_commentList->ignoreAnchorPointForPosition(false);
 
     m_commentList->m_contentLayer->setLayout(ScrollLayer::createDefaultListLayout(3.25f));
 
-    cmmtBorder->addChildAtPosition(m_commentList, Anchor::Top, {0.f, -5.f});
+    cmmtBorder->addChildAtPosition(m_commentList, Anchor::Top, { 0.0f, -5.0f });
 
     m_commentList->m_contentLayer->updateLayout();
     m_commentList->scrollToTop();
@@ -401,7 +390,8 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
             sender->setVisible(m_page < m_maxPage);
 
             refreshComments(true);
-        });
+        }
+    );
     m_pageNextBtn->setID("next-page-btn");
     m_pageNextBtn->setScale(0.875f);
     m_pageNextBtn->setVisible(false);
@@ -416,21 +406,22 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
             sender->setVisible(m_page > 1);
 
             refreshComments(true);
-        });
+        }
+    );
     m_pagePrevBtn->setID("previous-page-btn");
     m_pagePrevBtn->setScale(0.875f);
     m_pagePrevBtn->setVisible(false);
 
-    m_mainLayer->addChildAtPosition(m_pageNextBtn, Anchor::Right, {-18.75f, -3.75f});
-    m_mainLayer->addChildAtPosition(m_pagePrevBtn, Anchor::Left, {18.75f, -3.75f});
+    m_mainLayer->addChildAtPosition(m_pageNextBtn, Anchor::Right, { -18.75f, -3.75f });
+    m_mainLayer->addChildAtPosition(m_pagePrevBtn, Anchor::Left, { 18.75f, -3.75f });
 
     m_pageLabel = Label::create("Loading...", cw::ui::font::gold);
     m_pageLabel->setID("page-label");
     m_pageLabel->setScale(0.5f);
-    m_pageLabel->setAnchorPoint({1, 1});
+    m_pageLabel->setAnchorPoint({ 1, 1 });
     m_pageLabel->setAlignment(Label::Alignment::Right);
 
-    m_mainLayer->addChildAtPosition(m_pageLabel, Anchor::BottomRight, {-15.f, -1.25f});
+    m_mainLayer->addChildAtPosition(m_pageLabel, Anchor::BottomRight, { -15.0f, -1.25f });
 
     auto sendMenuLayout = RowLayout::create()
                               ->setAutoScale(false)
@@ -438,17 +429,17 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
 
     m_commentMenu = CCNode::create();
     m_commentMenu->setID("send-container");
-    m_commentMenu->setAnchorPoint({0.5, 0});
-    m_commentMenu->setContentSize({m_commentList->getScaledContentWidth(), 25.f});
+    m_commentMenu->setAnchorPoint({ 0.5, 0 });
+    m_commentMenu->setContentSize({ m_commentList->getScaledContentWidth(), 25.0f });
     m_commentMenu->setLayout(sendMenuLayout);
 
-    cmmtBorder->addChildAtPosition(m_commentMenu, Anchor::Bottom, {0.f, 5.f});
+    cmmtBorder->addChildAtPosition(m_commentMenu, Anchor::Bottom, { 0.0f, 5.0f });
 
     m_inputBox = TextInput::create(m_commentMenu->getScaledContentWidth() - 2.5f, "Share your thoughts...", cw::ui::font::chat);
     m_inputBox->setID("comment-text-input");
     m_inputBox->setScale(0.925f);
     m_inputBox->setMaxCharCount(impl::maxCommentChars);
-    m_inputBox->setTextAlign(TextInputAlign::Left);
+    m_inputBox->setAlignment(Label::Alignment::Left);
     m_inputBox->setCommonFilter(CommonFilter::Any);
 
     createInputLimitLabel(impl::maxCommentChars);
@@ -462,31 +453,31 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
 
     if (!isShowInput) {
         auto install = Label::createRich(
-            Loader::get()->isModInstalled(m_modId)
-                ? (argon::signedIn()
-                          ? "<cr>Unknown error</c>"  // idk let me have fun with my ternaries >:C
-                          : (impl::isBanned()
-                                    ? "You've been <cr>banned</c> from commenting."
-                                    : "<cy>Log in</c> to <cg>post comments</c>!"))
-                : "<cy>Install this mod</c> if you'd like to <cg>post comments</c> here!",
-            cw::ui::font::chat);
+            Loader::get()->isModInstalled(m_modId) ? (argon::signedIn() ? "<cr>Unknown error</c>"  // idk let me have fun with my ternaries >:C
+                                                                          :
+                                                                          (impl::isBanned() ? "You've been <cr>banned</c> from commenting." : "<cy>Log in</c> to <cg>post comments</c>!")) :
+                                                     "<cy>Install this mod</c> if you'd like to <cg>post comments</c> here!",
+            cw::ui::font::chat
+        );
         install->setScale(0.675f);
-        install->setAnchorPoint({0.5, 0});
+        install->setAnchorPoint({ 0.5, 0 });
         install->setAlignment(Label::Alignment::Center);
 
-        cmmtBorder->addChildAtPosition(install, Anchor::Bottom, {0.f, 4.25f});
+        cmmtBorder->addChildAtPosition(install, Anchor::Bottom, { 0.0f, 4.25f });
     };
 
     auto sendBtnSpr = EditorButtonSprite::createWithSpriteFrameName(
         m_geodeTheme ? "send_icon_geode.png"_spr : "send_icon_gd.png"_spr,
         0.875f,
-        m_geodeTheme ? EditorBaseColor::DarkGray : EditorBaseColor::Green);
+        m_geodeTheme ? EditorBaseColor::DarkGray : EditorBaseColor::Green
+    );
 
     auto sendBtn = Button::createWithNode(
         sendBtnSpr,
         [this, isShowInput](Button* sender) {
             if (isShowInput) onSend(sender);
-        });
+        }
+    );
     sendBtn->setID("send-comment-btn");
     sendBtn->setEnabled(isShowInput);
 
@@ -500,51 +491,44 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
         KeyboardInputEvent(enumKeyCodes::KEY_Enter),
         [this, sendBtn](KeyboardInputData& data) {
             if (data.action == KeyboardInputData::Action::Press) {
-                if (m_inputBox->getInputNode()->m_selected) onSend(sendBtn);
+                if (m_inputBox->isFocused()) onSend(sendBtn);
             };
-        });
+        }
+    );
 
     auto linkBtnMenuLayout = ColumnLayout::create()
-                                 ->setGap(2.f)
+                                 ->setGap(2.0f)
                                  ->setAutoScale(false)
-                                 ->setAutoGrowAxis(0.f);
+                                 ->setAutoGrowAxis(0.0f);
 
     auto linkBtnMenu = CCNode::create();
     linkBtnMenu->setID("link-container");
-    linkBtnMenu->setContentSize({12.5f, 1.25f});
+    linkBtnMenu->setContentSize({ 12.5f, 1.25f });
     linkBtnMenu->setZOrder(1);
     linkBtnMenu->setLayout(linkBtnMenuLayout);
 
-    m_mainLayer->addChildAtPosition(linkBtnMenu, Anchor::BottomLeft, {7.5f, 7.5f});
+    m_mainLayer->addChildAtPosition(linkBtnMenu, Anchor::BottomLeft, { 7.5f, 7.5f });
 
     auto linkBtns = std::array{
-        LinkButton{
+        cw::LinkButton{
             "comment-rules-btn",
             "accountBtn_myLists_001.png",
             [](auto) {
                 popups::showRules();
             },
         },
-        LinkButton{
+        cw::LinkButton{
             "discord-btn",
             "gj_discordIcon_001.png",
             [](auto) {
-                createQuickPopup(
-                    "Discord Community",
-                    "Join <cd>Cheeseworks</c>'s <cb>Discord server</c>?\n"
-                    "<cs>Get help, report bugs, and chat with other players!</c>",
-                    "Cancel",
-                    "OK",
-                    [](auto, bool ok) {
-                        if (ok) web::openLinkInBrowser("https://www.dsc.gg/cheeseworks");
-                    });
+                cw::popups::showDiscord();
             },
         },
-        LinkButton{
+        cw::LinkButton{
             "support-me-btn",
-            "geode.loader/gift.png",
+            "gift.png"_gode,
             [](auto) {
-                openSupportPopup(Mod::get());
+                cw::popups::showSupport();
             },
         },
     };
@@ -552,7 +536,8 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
     for (auto& linkBtn : linkBtns) {
         auto b = Button::createWithSpriteFrameName(
             linkBtn.sprite,
-            std::move(linkBtn.callback));
+            std::move(linkBtn.callback)
+        );
         b->setID(std::move(linkBtn.id));
 
         cue::rescaleToMatch(b, 22.5f);
@@ -564,30 +549,33 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
 
     m_refreshBtn = Button::createWithNode(
         CircleButtonSprite::createWithSpriteFrameName(
-            "geode.loader/reload.png",
+            "reload.png"_gode,
             0.975f,
-            m_geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green),
+            m_geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green
+        ),
         [this](Button* sender) {
             refreshComments();
-        });
+        }
+    );
     m_refreshBtn->setID("refresh-comments-btn");
     m_refreshBtn->setScale(0.625f);
 
     m_mainLayer->addChildAtPosition(m_refreshBtn, Anchor::BottomRight, {}, false);
 
-    cw::ui::nodes::addHelpButton(
+    cw::addHelpButton(
         m_mainLayer,
-        "This is the <cg>Mod Comment Menu</c>. You can <cy>read and send comments about this mod</c> here. Remember to <cr>read and follow the rules</c>.");
+        "This is the <cg>Mod Comment Menu</c>. You can <cy>read and send comments about this mod</c> here. Remember to <cr>read and follow the rules</c>."
+    );
 
     refreshComments();
 
     return true;
-};
+}
 
 void CommentsPopup::onSend(Button* sender) {
     if (!showInput()) return;
 
-    m_inputBox->defocus();
+    m_inputBox->unfocus();
 
     auto elapsed = asp::Instant::now().durationSince(s_lastComment).seconds();
     if (elapsed < impl::commentWait) {
@@ -598,7 +586,8 @@ void CommentsPopup::onSend(Button* sender) {
             fmt::format("You must <co>wait {} {} before sending your next comment</c>!", remaining, str::plurals::appendS("second", remaining)),
             "OK",
             nullptr,
-            nullptr);
+            nullptr
+        );
 
         return;
     };
@@ -609,7 +598,7 @@ void CommentsPopup::onSend(Button* sender) {
     if (inputStr.empty()) return Notification::create("Comment cannot be empty.", NotificationIcon::Error)->show();
 
     sender->setEnabled(false);
-    if (auto spr = typeinfo_cast<CCSprite*>(sender->getDisplayNode())) spr->setColor({65, 65, 65});
+    if (auto spr = typeinfo_cast<CCSprite*>(sender->getDisplayNode())) spr->setColor({ 65, 65, 65 });
 
     m_refreshBtn->setVisible(false);
 
@@ -628,10 +617,11 @@ void CommentsPopup::onSend(Button* sender) {
                 Notification::create(fmt::format("Error {}", res.getCode()), NotificationIcon::Error)->show();
             };
 
-            if (auto spr = typeinfo_cast<CCSprite*>(sender->getDisplayNode())) spr->setColor({255, 255, 255});
+            if (auto spr = typeinfo_cast<CCSprite*>(sender->getDisplayNode())) spr->setColor({ 255, 255, 255 });
             sender->setEnabled(true);
-        });
-};
+        }
+    );
+}
 
 void CommentsPopup::onDelete(Comment const& cmmt) {
     if (m_commentActionTask.isPending()) return;
@@ -647,9 +637,11 @@ void CommentsPopup::onDelete(Comment const& cmmt) {
                 [this](cw::WebRes res) {
                     if (res.isOk()) return refreshComments(true);
                     Notification::create(fmt::format("Failed to delete comment ({})", res.getCode()), NotificationIcon::Error)->show();
-                });
-        });
-};
+                }
+            );
+        }
+    );
+}
 
 void CommentsPopup::onReport(Comment const& cmmt) {
     if (m_commentActionTask.isPending()) return;
@@ -669,16 +661,18 @@ void CommentsPopup::onReport(Comment const& cmmt) {
 
                     SelfDirector::get()->setReport(cmmt.id);
                     Notification::create("Reported successfully", NotificationIcon::Success)->show();
-                });
+                }
+            );
         },
-        m_geodeTheme)
+        m_geodeTheme
+    )
         ->show();
-};
+}
 
 void CommentsPopup::onExit() {
     if (auto popup = CCScene::get()->getChildByType<RulesPopup>()) popup->removeFromParent();
-    Popup::onExit();
-};
+    GeodePopup::onExit();
+}
 
 CommentsPopup* CommentsPopup::create(std::string modId, bool geodeTheme) {
     auto ret = new CommentsPopup();
@@ -689,4 +683,4 @@ CommentsPopup* CommentsPopup::create(std::string modId, bool geodeTheme) {
 
     delete ret;
     return nullptr;
-};
+}

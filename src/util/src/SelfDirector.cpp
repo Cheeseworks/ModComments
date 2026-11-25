@@ -1,11 +1,13 @@
 #include "../SelfDirector.hpp"
 
-#include <Util.h>
+#include <cw.h>
+
+#include <rhatt/prelude.h>
 
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;
-using namespace cw::mod_cmmts;
+using namespace cw::modcmmts;
 
 UserIcons players::getUserIcons() {
     auto gm = GameManager::sharedState();
@@ -18,22 +20,13 @@ UserIcons players::getUserIcons() {
         static_cast<uint8_t>(gm->getPlayerGlowColor()),
         gm->m_playerGlow,
     };
-};
+}
 
 arc::Future<UserIcons> players::getUserIconsCo() {
     co_return *co_await async::waitForMainThread<UserIcons>([]() {
         return getUserIcons();
     });
-};
-
-void SelfDirector::onClosePopup(UploadActionPopup*) {
-    if (m_authTask.isPending()) {
-        Notification::create("Task cancelled", NotificationIcon::Error)->show();
-        m_authTask.cancel();
-    };
-
-    cue::resetNode(m_authProgPopup);
-};
+}
 
 void SelfDirector::setReport(uint64_t id, bool unset) {
     if (unset) {
@@ -42,12 +35,21 @@ void SelfDirector::setReport(uint64_t id, bool unset) {
     };
 
     m_reportedAds.insert(id);
-};
+}
 
 void SelfDirector::startAuth() {
     if (m_authTask.isPending()) return;
 
-    m_authProgPopup = UploadActionPopup::create(this, "Authorizing...");
+    m_authProgPopup = ProcessPopup::create("Authorizing...");
+    m_authProgPopup->setCloseCallback([this](auto, auto) {
+        if (m_authTask.isPending()) {
+            Notification::create("Task cancelled", NotificationIcon::Error)->show();
+            m_authTask.cancel();
+        };
+
+        cue::resetNode(m_authProgPopup);
+    });
+
     m_authProgPopup->show();
 
     m_authTask.spawn(
@@ -55,7 +57,7 @@ void SelfDirector::startAuth() {
         [this](WebRes res) {
             if (res.isErr() && res.getCode() != 401) {
                 log::error("{}: {}", res.getCode(), res.getError());
-                m_authProgPopup->showFailMessage(fmt::format("Failed to authorize ({})", res.getCode()));
+                m_authProgPopup->setFailure(fmt::format("Failed to authorize ({})", res.getCode()));
 
                 return;
             };
@@ -63,7 +65,7 @@ void SelfDirector::startAuth() {
             auto userRes = res.getPayload<CommentUser>();
             if (userRes.isErr()) {
                 auto banRes = res.getPayload<CommentBannedUser>();
-                if (banRes.isErr()) return m_authProgPopup->showFailMessage("Ban serialization error");
+                if (banRes.isErr()) return m_authProgPopup->setFailure("Ban serialization error");
 
                 auto ban = std::move(banRes).unwrap();
                 m_banData = std::move(ban);
@@ -84,12 +86,14 @@ void SelfDirector::startAuth() {
                         "<co>Reason:</c>\n{}\n\n"
                         "<cy>Until:</c>\n{}",
                         m_banData.reason,
-                        remaining.toHumanString()),
+                        remaining.toHumanString()
+                    ),
                     "OK",
                     "Appeal",
                     [](auto, bool ok) {
                         if (ok) cw::ui::popups::showDiscord();
-                    });
+                    }
+                );
 
                 return;
             };
@@ -99,11 +103,12 @@ void SelfDirector::startAuth() {
             setCurrentUser(std::move(userRes).unwrap());
 
             auto getRes = getCurrentUser();
-            if (getRes.isErr()) return m_authProgPopup->showFailMessage("Unknown error");
+            if (getRes.isErr()) return m_authProgPopup->setFailure("Unknown error");
 
-            m_authProgPopup->showSuccessMessage(fmt::format("Authorized as {}", getRes.unwrap().username));
-        });
-};
+            m_authProgPopup->setSuccess(fmt::format("Authorized as {}", getRes.unwrap().username));
+        }
+    );
+}
 
 arc::Future<cw::WebRes> SelfDirector::authorize() {
     log::warn("Authorizing user...");
@@ -116,33 +121,33 @@ arc::Future<cw::WebRes> SelfDirector::authorize() {
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .bodyJSON(body);
 
-    co_return request::parse(co_await req.post("/v1/me"_api));
-};
+    co_return cw::request::parse(co_await req.post("/v2/me"_api));
+}
 
 void SelfDirector::setCurrentUser(CommentUser user) {
     m_authorized = (user.id == GJAccountManager::sharedState()->m_accountID);
     m_user = std::move(user);
-};
+}
 
 Result<const CommentUser> SelfDirector::getCurrentUser() const noexcept {
     if (isAuthorized()) return Ok(m_user);
     return Err("User is not logged in");
-};
+}
 
 Result<const CommentBannedUser> SelfDirector::getBanData() const noexcept {
     if (isBanned()) return Ok(m_banData);
     return Err("User is not banned");
-};
+}
 
 bool SelfDirector::isAuthorized() const noexcept {
     return argon::signedIn() && m_authorized;
-};
+}
 
 bool SelfDirector::isBanned() const noexcept {
     return argon::signedIn() && m_banned;
-};
+}
 
 bool SelfDirector::isReported(uint64_t id) const noexcept {
     auto const it = m_reportedAds.find(id);
     return it != m_reportedAds.end();
-};
+}

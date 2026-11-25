@@ -21,4 +21,4 @@ You can only <cy>post comments</c> on <cg>mods you currently have installed on y
 
 ---
 
-![🗨️](frame:gj_discordIcon_001.png?scale=0.375) **If you need help, join my [support Discord server](https://www.dsc.gg/cheeseworks) and ask! :)**
+![🗨️](frame:gj_discordIcon_001.png?scale=0.375) **If you need help, join my [support Discord server](https://cwrk.cc/discord) and ask! :)**

@@ -6,8 +6,8 @@
 
 #include <rhatt/base/Singleton.hpp>
 
-namespace cw::mod_cmmts {
-    class SelfDirector final : public base::Singleton<SelfDirector>, public UploadPopupDelegate {
+namespace cw::modcmmts {
+    class SelfDirector final : public ::cw::base::Singleton<SelfDirector>, public UploadPopupDelegate {
     private:
         CommentUser m_user;
         bool m_authorized = false;
@@ -15,14 +15,11 @@ namespace cw::mod_cmmts {
         CommentBannedUser m_banData;
         bool m_banned = false;
 
-        geode::Ref<UploadActionPopup> m_authProgPopup = nullptr;
+        geode::Ref<geode::ProcessPopup> m_authProgPopup = nullptr;
 
         geode::async::TaskHolder<WebRes> m_authTask;
 
         std::unordered_set<uint64_t> m_reportedAds;
-
-    protected:
-        void onClosePopup(UploadActionPopup*) override;
 
     public:
         void startAuth();

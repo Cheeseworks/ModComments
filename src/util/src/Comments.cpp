@@ -1,11 +1,13 @@
 #include "../Comments.hpp"
 
-#include <Util.h>
+#include <cw.h>
+
+#include <rhatt/prelude.h>
 
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;
-using namespace cw::mod_cmmts;
+using namespace cw::modcmmts;
 
 Result<UserIcons> matjson::Serialize<UserIcons>::fromJson(matjson::Value const& value) {
     UserIcons out;
@@ -20,7 +22,7 @@ Result<UserIcons> matjson::Serialize<UserIcons>::fromJson(matjson::Value const& 
     out.iconType = static_cast<IconType>(iconType);
 
     return Ok(std::move(out));
-};
+}
 
 matjson::Value matjson::Serialize<UserIcons>::toJson(UserIcons const& value) {
     Value out;
@@ -32,7 +34,7 @@ matjson::Value matjson::Serialize<UserIcons>::toJson(UserIcons const& value) {
     out["use_glow"] = value.useGlow;
 
     return out;
-};
+}
 
 Result<CommentUser> matjson::Serialize<CommentUser>::fromJson(matjson::Value const& value) {
     GEODE_UNWRAP_INTO(auto icons, value.as<UserIcons>());
@@ -52,7 +54,7 @@ Result<CommentUser> matjson::Serialize<CommentUser>::fromJson(matjson::Value con
     out.created = asp::SystemTime::fromUnix(createdAt);
 
     return Ok(std::move(out));
-};
+}
 
 matjson::Value matjson::Serialize<CommentUser>::toJson(CommentUser const& value) {
     Value out;
@@ -64,7 +66,8 @@ matjson::Value matjson::Serialize<CommentUser>::toJson(CommentUser const& value)
             value.color2,
             value.colorGlow,
             value.useGlow,
-        });
+        }
+    );
 
     out["id"] = value.id;
     out["username"] = value.username;
@@ -73,7 +76,7 @@ matjson::Value matjson::Serialize<CommentUser>::toJson(CommentUser const& value)
     out["created_at"] = value.created.timeSinceEpoch().seconds();
 
     return out;
-};
+}
 
 Result<Comment> matjson::Serialize<Comment>::fromJson(matjson::Value const& value) {
     Comment out;
@@ -92,7 +95,7 @@ Result<Comment> matjson::Serialize<Comment>::fromJson(matjson::Value const& valu
     GEODE_UNWRAP_INTO_IF_OK(out.myVote, value["voted"].asInt());
 
     return Ok(std::move(out));
-};
+}
 
 matjson::Value matjson::Serialize<Comment>::toJson(Comment const& value) {
     Value out;
@@ -106,7 +109,7 @@ matjson::Value matjson::Serialize<Comment>::toJson(Comment const& value) {
     out["voted"] = value.myVote;
 
     return out;
-};
+}
 
 Result<CommentReport> matjson::Serialize<CommentReport>::fromJson(matjson::Value const& value) {
     CommentReport out;
@@ -120,7 +123,7 @@ Result<CommentReport> matjson::Serialize<CommentReport>::fromJson(matjson::Value
     out.created = asp::SystemTime::fromUnix(uTime);
 
     return Ok(std::move(out));
-};
+}
 
 matjson::Value matjson::Serialize<CommentReport>::toJson(CommentReport const& value) {
     Value out;
@@ -131,7 +134,7 @@ matjson::Value matjson::Serialize<CommentReport>::toJson(CommentReport const& va
     out["created_at"] = value.created.timeSinceEpoch().seconds();
 
     return out;
-};
+}
 
 Result<CommentBannedUser> matjson::Serialize<CommentBannedUser>::fromJson(matjson::Value const& value) {
     CommentBannedUser out;
@@ -146,7 +149,7 @@ Result<CommentBannedUser> matjson::Serialize<CommentBannedUser>::fromJson(matjso
     out.until = asp::Duration::fromSecs(duration);
 
     return Ok(std::move(out));
-};
+}
 
 matjson::Value matjson::Serialize<CommentBannedUser>::toJson(CommentBannedUser const& value) {
     Value out;
@@ -156,4 +159,4 @@ matjson::Value matjson::Serialize<CommentBannedUser>::toJson(CommentBannedUser c
     out["until"] = value.until.seconds();
 
     return out;
-};
+}
