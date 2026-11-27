@@ -21,7 +21,7 @@ namespace cw::modcmmts {
     };
 
     namespace impl {
-        static constexpr uint8_t maxReportChars = 48;
+        static constexpr uint8_t MAX_REPORT_CHARS = 48;
 
         static bool isStaff() {
             auto userRes = SelfDirector::get()->getCurrentUser();
@@ -83,12 +83,12 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
 
     m_mainLayer->addChildAtPosition(label, Anchor::Top, { 0.0f, -32.5f });
 
-    m_inputBox = TextInput::create(m_mainLayer->getScaledContentWidth() - 25.0f, "Tell us about this commment...", cw::ui::font::chat);
+    m_inputBox = TextInput::create(m_mainLayer->getScaledContentWidth() - 25.0f, "Tell us about this comment...", cw::ui::font::chat);
     m_inputBox->setID("description-input");
-    m_inputBox->setMaxCharCount(impl::maxReportChars);
+    m_inputBox->setMaxCharCount(impl::MAX_REPORT_CHARS);
     m_inputBox->setContentHeight(m_inputBox->getScaledContentHeight() * 1.5f);
 
-    createInputLimitLabel(impl::maxReportChars);
+    createInputLimitLabel(impl::MAX_REPORT_CHARS);
 
     setMildLimitWarning(34);
     setModerateLimitWarning(42);
@@ -113,7 +113,7 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
         [this, &cmmt](Button* sender) {
             auto inputStr = str::trim(m_inputBox->getString());
 
-            if (inputStr.size() > impl::maxReportChars) return Notification::create(fmt::format("Comment exceeds {} characters", impl::maxReportChars), NotificationIcon::Warning)->show();
+            if (inputStr.size() > impl::MAX_REPORT_CHARS) return Notification::create(fmt::format("Comment exceeds {} characters", impl::MAX_REPORT_CHARS), NotificationIcon::Warning)->show();
             if (inputStr.empty()) return Notification::create("Comment cannot be empty.", NotificationIcon::Error)->show();
 
             m_callback(cmmt, std::move(inputStr));

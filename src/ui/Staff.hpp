@@ -8,7 +8,7 @@
 
 namespace cw::modcmmts {
     namespace ui {
-        class StaffBanPopup final : public geode::GeodePopup {
+        class StaffBanPopup final : public geode::GeodePopup, private base::InputLimiter {
             using Callback = geode::Function<void(asp::Duration)>;
 
         private:
