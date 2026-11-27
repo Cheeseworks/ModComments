@@ -108,25 +108,18 @@ bool StaffPopup::init(Comment cmmt, Callback&& cb) {
             "delete-comment-btn",
             "particle_193_001.png",
             [this](auto) {
-                cw::showAlert(
-                    "Delete Comment",
-                    fmt::format("<cr>Delete</c> <co>{}</c>'s comment?", m_comment.author.username),
-                    "Cancel",
-                    "OK"
-                );
+                m_callback(CommentAction::Delete, m_comment, std::nullopt, std::nullopt);
+                onClose(m_closeBtn);
             },
         },
         ActionButton{
             "report-comment-btn",
             "info-warning.png"_gode,
             [this](auto) {
-                CommentReportPopup::create(
-                    m_comment,
-                    [this](Comment const& comment, std::string reason) {
-                        m_callback(CommentAction::Report, comment, std::move(reason), std::nullopt);
-                    }
-                );
-            } },
+                m_callback(CommentAction::Report, m_comment, std::nullopt, std::nullopt);
+                onClose(m_closeBtn);
+            },
+        },
         ActionButton{
             "ban-user-btn",
             "particle_194_001.png",

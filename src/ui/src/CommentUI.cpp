@@ -338,7 +338,12 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
                         geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green
                     ),
                     [this](auto) {
-                        StaffPopup::create(m_comment, [](auto, auto, auto, auto) {})->show();
+                        StaffPopup::create(
+                            m_comment,
+                            [this](CommentAction action, Comment const& cmmt, std::optional<std::string> reason, std::optional<asp::Duration> duration) {
+                                m_callback(action, cmmt);
+                            }
+                        )->show();
                     }
                 );
                 actionBtn->setID("staff-panel-btn");
