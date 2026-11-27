@@ -29,10 +29,7 @@
     "resources": {
         "spritesheets": {
             "CW_MCMMTS_badges": [
-                "resources/badges/*.png"
-            ],
-            "CW_MCMMTS_btns": [
-                "resources/btns/*.png"
+                "resources/*.png"
             ]
         }
     },
