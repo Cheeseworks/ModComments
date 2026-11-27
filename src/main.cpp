@@ -116,73 +116,65 @@ class $nodeModify(CommentsModPopup, ModPopup) {
             log::debug("Reading popup data");
 #endif
 
-            if (auto displayNode = self->m_mainLayer->getChildByType<CCNode>(3)) {
+            if (auto tabsMenu = self->m_mainLayer->querySelector("main-container > right-column > tabs-menu")) {
 #ifdef CW_TESTING
-                log::trace("Found display container {}", (void*)displayNode);
+                log::trace("Found tabs menu");
 #endif
 
-                if (auto tabsMenu = displayNode->querySelector("right-column > tabs-menu")) {
-#ifdef CW_TESTING
-                    log::trace("Found tabs menu");
-#endif
+                tabsMenu->setPosition({ 0.0f, tabsMenu->getPositionY() - 2.0f });
+                tabsMenu->setAnchorPoint({ 0, 1 });
+                tabsMenu->setContentWidth(tabsMenu->getContentWidth() - 21.25f);
 
-                    tabsMenu->setPosition({ 0.0f, tabsMenu->getPositionY() - 2.0f });
-                    tabsMenu->setAnchorPoint({ 0, 1 });
-                    tabsMenu->setContentWidth(tabsMenu->getContentWidth() - 21.25f);
+                auto tabSprite = GeodeTabSprite::create("message.png"_gode, "Comments", 140.0f);
+                tabSprite->select(false);
 
-                    auto tabSprite = GeodeTabSprite::create("message.png"_gode, "Comments", 140.0f);
-                    tabSprite->select(false);
+                auto tab = Button::createWithNode(
+                    tabSprite,
+                    [f](auto) {
+                        if (auto const it = main::VALID_MODS.find(f->id); it != main::VALID_MODS.end()) return main::createPopup(f->id, f->geodeTheme);
 
-                    auto tab = CCMenuItemExt::createSpriteExtra(
-                        tabSprite,
-                        [f](auto) {
-                            if (auto const it = main::VALID_MODS.find(f->id); it != main::VALID_MODS.end()) return main::createPopup(f->id, f->geodeTheme);
+                        auto delegate = IndexTaskDelegate::get();
 
-                            auto delegate = IndexTaskDelegate::get();
+                        auto popup = delegate->createProgressPopup();
 
-                            auto popup = delegate->createProgressPopup();
-
-                            delegate->m_checkIndexTask.spawn(
-                                delegate->checkModIndex(f->id),
-                                [id = f->id, geodeTheme = f->geodeTheme, popup](cw::WebRes res) mutable {
-                                    if (res.isOk()) {
-                                        auto metaRes = res.getPayload<GeodeMod>();
-                                        if (metaRes.isErr()) {
-                                            log::error("Failed to parse Geode index response: {}", metaRes.unwrapErr());
-                                            popup->setFailure("Unknown error");
-
-                                            return;
-                                        };
-
-                                        auto const meta = std::move(metaRes).unwrap();
-                                        if (meta.versions.empty()) {
-                                            popup->setFailure("Mod is delisted");
-                                            return;
-                                        };
-
-                                        popup->removeFromParent();
-                                        main::VALID_MODS.insert(id);
-
-                                        main::createPopup(std::move(id), geodeTheme);
+                        delegate->m_checkIndexTask.spawn(
+                            delegate->checkModIndex(f->id),
+                            [id = f->id, geodeTheme = f->geodeTheme, popup](cw::WebRes res) mutable {
+                                if (res.isOk()) {
+                                    auto metaRes = res.getPayload<GeodeMod>();
+                                    if (metaRes.isErr()) {
+                                        log::error("Failed to parse Geode index response: {}", metaRes.unwrapErr());
+                                        popup->setFailure("Unknown error");
 
                                         return;
                                     };
 
-                                    popup->setFailure("Mod is unavailable");
-                                }
-                            );
-                        }
-                    );
-                    tab->setID("comments-btn"_spr);
-                    tab->setTag(tabsMenu->getChildrenCount());
+                                    auto const meta = std::move(metaRes).unwrap();
+                                    if (meta.versions.empty()) {
+                                        popup->setFailure("Mod is delisted");
+                                        return;
+                                    };
 
-                    tabsMenu->addChild(tab);
-                    tabsMenu->updateLayout();
-                } else {
-                    log::error("Cannot find tabs menu");
-                };
+                                    popup->removeFromParent();
+                                    main::VALID_MODS.insert(id);
+
+                                    main::createPopup(std::move(id), geodeTheme);
+
+                                    return;
+                                };
+
+                                popup->setFailure("Mod is unavailable");
+                            }
+                        );
+                    }
+                );
+                tab->setID("comments-btn"_spr);
+                tab->setTag(tabsMenu->getChildrenCount());
+
+                tabsMenu->addChild(tab);
+                tabsMenu->updateLayout();
             } else {
-                log::error("Cannot find display container");
+                log::error("Cannot find tabs menu");
             };
         } else {
             log::error("Cannot read popup data");
@@ -190,13 +182,10 @@ class $nodeModify(CommentsModPopup, ModPopup) {
     }
 
     Result<std::string> getThisID() {
-        if (auto self = reinterpret_cast<FLAlertLayer*>(this)) {
-            log::trace("Searching for mod page button in popup");
-
-            if (auto modPageBtn = self->m_buttonMenu->getChildByID("mod-online-page-button")) {
-                log::trace("Mod page button found");
-
-                if (auto url = typeinfo_cast<CCString*>(modPageBtn->getUserObject("url"))) {
+        if (auto id = typeinfo_cast<CCString*>(getUserObject("mod"))) return Ok(id->getCString());
+        if (auto self = typeinfo_cast<FLAlertLayer*>(this)) {
+            if (auto btn = self->m_mainLayer->getChildByID("mod-online-page-button")) {
+                if (auto url = typeinfo_cast<CCString*>(btn->getUserObject("url"))) {
                     log::trace("URL string object found in mod page button");
 
                     std::string urlStr = url->getCString();
@@ -205,13 +194,13 @@ class $nodeModify(CommentsModPopup, ModPopup) {
                     return Err("Mod ID not found");
                 };
 
-                return Err("Mod page button does not have a valid URL object");
+                return Err("URL string object not found");
             };
 
-            return Err("Mod page button not found in popup");
+            return Err("URL button not found");
         };
 
-        return Err("Could not cast this to FLAlertLayer");
+        return Err("String object not found");
     }
 };
 

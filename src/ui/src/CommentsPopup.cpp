@@ -13,10 +13,10 @@ using namespace cw::modcmmts;
 
 namespace cw::modcmmts {
     namespace impl {
-        static constexpr uint8_t commentWait = 30;
-        static constexpr uint8_t refreshWait = 2;
+        static constexpr uint8_t COMMENT_WAIT = 30;
+        static constexpr uint8_t REFRESH_WAIT = 2;
 
-        static constexpr uint8_t maxCommentChars = 128;
+        static constexpr uint8_t MAX_COMMENT_CHARS = 192;
 
         static bool isBanned() {
             return SelfDirector::get()->isBanned();
@@ -202,14 +202,13 @@ arc::Future<cw::WebRes> CommentsPopup::sendComment(std::string content) {
 }
 
 void CommentsPopup::updatePageLabel() {
-    auto count = m_commentList->m_contentLayer->getChildrenCount();
-    m_pageLabel->setText(fmt::format("Page {}/{} ({} total)", m_page, m_maxPage, count));
+    m_pageLabel->setText(fmt::format("Page {}/{} ({} Total)", m_page, m_maxPage, m_maxComments));
 }
 
 void CommentsPopup::refreshComments(bool skipCooldown) {
     if (!skipCooldown) {
         auto elapsed = asp::Instant::now().durationSince(s_lastRefresh).seconds();
-        if (elapsed < impl::refreshWait) return;
+        if (elapsed < impl::REFRESH_WAIT) return;
     };
 
     s_lastRefresh = asp::Instant::now();
@@ -243,6 +242,7 @@ void CommentsPopup::refreshComments(bool skipCooldown) {
                 auto cmmt = std::move(cmmtRes).unwrap();
                 m_page = cmmt.pagination.page;
                 m_maxPage = cmmt.pagination.totalPages;
+                m_maxComments = cmmt.pagination.totalItems;
 
                 for (auto& comment : cmmt.items) {
                     auto cell = CommentItem::create(
@@ -438,14 +438,16 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
     m_inputBox = TextInput::create(m_commentMenu->getScaledContentWidth() - 2.5f, "Share your thoughts...", cw::ui::font::chat);
     m_inputBox->setID("comment-text-input");
     m_inputBox->setScale(0.925f);
-    m_inputBox->setMaxCharCount(impl::maxCommentChars);
+    m_inputBox->setMaxCharCount(impl::MAX_COMMENT_CHARS);
     m_inputBox->setAlignment(Label::Alignment::Left);
     m_inputBox->setCommonFilter(CommonFilter::Any);
+    m_inputBox->setContentHeight(m_inputBox->getScaledContentHeight() * 2.0f);
+    m_inputBox->setDisplayEmojis(true);
 
-    createInputLimitLabel(impl::maxCommentChars);
+    createInputLimitLabel(impl::MAX_COMMENT_CHARS);
 
-    setMildLimitWarning(64);
-    setModerateLimitWarning(96);
+    setMildLimitWarning(96);
+    setModerateLimitWarning(156);
 
     m_commentMenu->addChild(m_inputBox);
 
@@ -484,17 +486,26 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
     cue::rescaleToMatch(sendBtn, 26.25f);
 
     m_commentMenu->addChild(sendBtn);
-
     m_commentMenu->updateLayout();
 
-    addEventListener(
-        KeyboardInputEvent(enumKeyCodes::KEY_Enter),
-        [this, sendBtn](KeyboardInputData& data) {
-            if (data.action == KeyboardInputData::Action::Press) {
-                if (m_inputBox->isFocused()) onSend(sendBtn);
-            };
-        }
+    m_inputBox->setEnterCallback([this, sendBtn](auto) {
+        onSend(sendBtn);
+    });
+
+    m_pageBtnSprite = ButtonSprite::create(
+        cw::fmtNum(m_page).c_str(),
+        cw::font::big,
+        geodeTheme ? "GE_button_05.png"_gode : "GJ_button_01.png",
+        0.75f
     );
+
+    auto pageBtn = Button::createWithNode(
+        m_pageBtnSprite
+    );
+    pageBtn->setID("jump-to-page-btn");
+    pageBtn->setScale(0.625f);
+
+    m_mainLayer->addChildAtPosition(pageBtn, Anchor::TopLeft, { 12.5f, -50.0f });
 
     auto linkBtnMenuLayout = ColumnLayout::create()
                                  ->setGap(2.0f)
@@ -578,8 +589,8 @@ void CommentsPopup::onSend(Button* sender) {
     m_inputBox->unfocus();
 
     auto elapsed = asp::Instant::now().durationSince(s_lastComment).seconds();
-    if (elapsed < impl::commentWait) {
-        auto remaining = impl::commentWait - elapsed;
+    if (elapsed < impl::COMMENT_WAIT) {
+        auto remaining = impl::COMMENT_WAIT - elapsed;
 
         createQuickPopup(
             "Slow Down!",
@@ -594,7 +605,7 @@ void CommentsPopup::onSend(Button* sender) {
 
     auto inputStr = str::trim(m_inputBox->getString());
 
-    if (inputStr.size() > impl::maxCommentChars) return Notification::create(fmt::format("Comment exceeds {} characters", impl::maxCommentChars), NotificationIcon::Warning)->show();
+    if (inputStr.size() > impl::MAX_COMMENT_CHARS) return Notification::create(fmt::format("Comment exceeds {} characters", impl::MAX_COMMENT_CHARS), NotificationIcon::Warning)->show();
     if (inputStr.empty()) return Notification::create("Comment cannot be empty.", NotificationIcon::Error)->show();
 
     sender->setEnabled(false);

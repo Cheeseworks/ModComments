@@ -13,10 +13,15 @@ bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
     m_user = std::move(user);
     m_callback = std::move(cb);
 
-    if (!GeodePopup::init(225.0f, 175.0f)) return false;
+    if (!GeodePopup::init(235.0f, 195.0f, GeodePopupStyle::Alt2)) return false;
 
     setID("staff-ban-popup"_spr);
     setTitle(fmt::format("Ban {}?", m_user.username));
+
+    cw::addHelpButton(
+        m_mainLayer,
+        fmt::format("If you'd like to ban <co>{}</c>, use the tools in this pop-up. Handle responsibly.", m_user.username)
+    );
 
     return true;
 }
@@ -36,10 +41,86 @@ bool StaffPopup::init(Comment cmmt, Callback&& cb) {
     m_comment = std::move(cmmt);
     m_callback = std::move(cb);
 
-    if (!GeodePopup::init(265.0f, 190.0f)) return false;
+    if (!GeodePopup::init(295.0f, 170.0f, GeodePopupStyle::Alt)) return false;
 
     setID("staff-popup"_spr);
     setTitle("Mod Comments Staff Panel");
+
+    auto cell = CommentItem::create(m_comment, m_mainLayer->getContentWidth() - 37.5f, false);
+    cell->setID("comment-cell");
+
+    m_mainLayer->addChildAtPosition(cell, Anchor::Center, { 0.0f, 3.75f });
+
+    auto label = Label::createRich("You have tools at your disposal to enforce <cr>the rules</c>. Please make sure to <co>use these powers responsibly</c>, abuse will most likely result in the <ca>revoking of staff privileges</c>.", cw::font::geode::bold);
+    label->setScale(0.425f);
+    label->setAnchorPoint({ 0.5f, 1.0f });
+    label->setMaxWidth((m_mainLayer->getContentWidth() - 42.5f) / label->getScale());
+    label->setAlignment(Label::Alignment::Center);
+
+    m_mainLayer->addChildAtPosition(label, Anchor::Center, { 0.0f, -5.0f });
+
+    auto layout = RowLayout::create()
+                      ->setGap(5.0f)
+                      ->setDefaultScaleLimits(0.125f, 0.75f)
+                      ->setAutoGrowAxis(0.0f)
+                      ->setGrowCrossAxis(true);
+
+    auto menu = CCNode::create();
+    menu->setID("actions-menu");
+    menu->setAnchorPoint(cw::anchor::center);
+    menu->setZOrder(9);
+    menu->setLayout(layout);
+
+    m_mainLayer->addChildAtPosition(menu, Anchor::Bottom, { 0.0f, 25.0f });
+
+    auto delBtn = Button::createWithNode(
+        EditorButtonSprite::createWithSpriteFrameName(
+            "particle_193_001.png",
+            0.75f,
+            EditorBaseColor::DarkGray
+        ),
+        [this](auto) {
+            cw::showAlert(
+                "Delete Comment",
+                fmt::format("<cr>Delete</c> <co>{}</c>'s comment?", m_comment.author.username),
+                "Cancel",
+                "OK"
+            );
+        }
+    );
+    delBtn->setID("delete-comment-btn");
+
+    auto banBtn = Button::createWithNode(
+        EditorButtonSprite::createWithSpriteFrameName(
+            "particle_194_001.png",
+            0.75f,
+            EditorBaseColor::DarkGray
+        ),
+        [this](auto) {
+            StaffBanPopup::create(m_comment.author, nullptr)->show();
+        }
+    );
+    banBtn->setID("ban-user-btn");
+
+    menu->addChild(delBtn);
+    menu->addChild(banBtn);
+
+    menu->updateLayout();
+
+    auto bg = cue::createBackground(
+        menu->getScaledContentSize() * 1.25f,
+        {
+            .zOrder = 1,
+            .id = "",
+        }
+    );
+
+    m_mainLayer->addChildAtPosition(bg, Anchor::Bottom, { 0.0f, 25.0f });
+
+    cw::addHelpButton(
+        m_mainLayer,
+        fmt::format("This is the <cg>staff panel</c> for the comment <cc>{}</c> by <co>{}</c>. You can <cr>take action on it through here</c> if necessary.", m_comment.id, m_comment.author.username)
+    );
 
     return true;
 }

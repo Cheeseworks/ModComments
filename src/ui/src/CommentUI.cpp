@@ -320,12 +320,12 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
                                     ->setAutoGrowAxis(0.0f)
                                     ->setGrowCrossAxis(true);
 
-        auto actionMenu = CCNode::create();
-        actionMenu->setID("action-container");
-        actionMenu->setAnchorPoint({ 1, 1 });
-        actionMenu->setLayout(actionMenuLayout);
+        m_actionMenu = CCNode::create();
+        m_actionMenu->setID("action-container");
+        m_actionMenu->setAnchorPoint({ 1, 1 });
+        m_actionMenu->setLayout(actionMenuLayout);
 
-        addChildAtPosition(actionMenu, Anchor::TopRight, { -3.75f, -3.75f });
+        addChildAtPosition(m_actionMenu, Anchor::TopRight, { -3.75f, -3.75f });
 
         if (argon::signedIn()) {
             Button* actionBtn = nullptr;
@@ -353,7 +353,7 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
             } else {
                 actionBtn = Button::createWithNode(
                     CircleButtonSprite::createWithSpriteFrameName(
-                        "exclamation-red.png",
+                        "exclamation-red.png"_gode,
                         0.875f,
                         geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green
                     ),
@@ -367,11 +367,11 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
 
             cue::rescaleToMatch(actionBtn, 20.0f);
 
-            actionMenu->addChild(actionBtn);
+            m_actionMenu->addChild(actionBtn);
         };
 
-        addVoteNodes(actionMenu, m_dislikeBtn, m_dislikeLabel, CommentVote::Dislike);
-        addVoteNodes(actionMenu, m_likeBtn, m_likeLabel, CommentVote::Like);
+        addVoteNodes(m_actionMenu, m_dislikeBtn, m_dislikeLabel, CommentVote::Dislike);
+        addVoteNodes(m_actionMenu, m_likeBtn, m_likeLabel, CommentVote::Like);
     };
 
     auto const timePosted = *asp::SystemTime::now().durationSince(m_comment.created);
@@ -434,6 +434,8 @@ void CommentItem::voteCallback(CommentVote type) {
     m_likeBtn->setEnabled(false);
     m_dislikeBtn->setEnabled(false);
 
+    m_actionMenu->updateLayout();
+
     m_voteTask.spawn(
         sendVote(type),
         [this, prevLikes, prevDislikes, prevVote, like](cw::WebRes res) {
@@ -443,6 +445,8 @@ void CommentItem::voteCallback(CommentVote type) {
 
                 m_likeBtn->setEnabled(true);
                 m_dislikeBtn->setEnabled(true);
+
+                m_actionMenu->updateLayout();
             };
 
             auto const fallback = [&completed, res](std::string_view err) {

@@ -41,6 +41,8 @@ namespace cw::modcmmts {
             cocos2d::CCNode* m_userMenu = nullptr;
             geode::Label* m_contentLabel = nullptr;
 
+            cocos2d::CCNode* m_actionMenu = nullptr;
+
             geode::Button* m_likeBtn = nullptr;
             geode::Button* m_dislikeBtn = nullptr;
 
