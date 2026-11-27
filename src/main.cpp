@@ -125,7 +125,7 @@ class $nodeModify(CommentsModPopup, ModPopup) {
                 tabsMenu->setAnchorPoint({ 0, 1 });
                 tabsMenu->setContentWidth(tabsMenu->getContentWidth() - 21.25f);
 
-                auto tabSprite = GeodeTabSprite::create("message.png"_gode, "Comments", 140.0f);
+                auto tabSprite = GeodeTabSprite::create("particle_206_001.png", "Comments", 140.0f);
                 tabSprite->select(false);
 
                 auto tab = Button::createWithNode(

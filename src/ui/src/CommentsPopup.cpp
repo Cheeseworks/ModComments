@@ -179,6 +179,20 @@ arc::Future<cw::WebRes> CommentsPopup::reportComment(uint64_t id, std::string re
     co_return cw::request::parse(co_await req.post("/v2/reports/send"_api));
 }
 
+arc::Future<cw::WebRes> CommentsPopup::banCommentUser(int id, std::string reason, asp::Duration duration) {
+    CW_ARGON_UNWRAP(auto token);
+
+    matjson::Value body;
+    body["account_id"] = id;
+    body["reason"] = std::move(reason);
+    body["duration"] = duration.seconds();
+
+    auto req = (co_await request::withAuthCo(std::move(token)))
+                   .bodyJSON(body);
+
+    co_return cw::request::parse(co_await req.post("/v2/bans/ban"_api));
+}
+
 arc::Future<cw::WebRes> CommentsPopup::getComments() {
     auto req = cw::request::base()
                    .param("mod", m_modId)
@@ -469,7 +483,7 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
     };
 
     auto sendBtnSpr = EditorButtonSprite::createWithSpriteFrameName(
-        m_geodeTheme ? "send_icon_geode.png"_spr : "send_icon_gd.png"_spr,
+        "particle_12_001.png",
         0.875f,
         m_geodeTheme ? EditorBaseColor::DarkGray : EditorBaseColor::Green
     );
@@ -505,7 +519,7 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
     pageBtn->setID("jump-to-page-btn");
     pageBtn->setScale(0.625f);
 
-    m_mainLayer->addChildAtPosition(pageBtn, Anchor::TopLeft, { 12.5f, -50.0f });
+    m_mainLayer->addChildAtPosition(pageBtn, Anchor::TopLeft, { 20.0f, -50.0f });
 
     auto linkBtnMenuLayout = ColumnLayout::create()
                                  ->setGap(2.0f)

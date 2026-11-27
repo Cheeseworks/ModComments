@@ -87,6 +87,7 @@ namespace cw::modcmmts {
 
             arc::Future<WebRes> deleteComment(uint64_t id);
             arc::Future<WebRes> reportComment(uint64_t id, std::string reason);
+            arc::Future<WebRes> banCommentUser(int id, std::string reason, asp::Duration duration);
 
             geode::async::TaskHolder<WebRes> m_geodeTask;
 
