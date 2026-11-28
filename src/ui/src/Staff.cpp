@@ -2,6 +2,8 @@
 
 #include <cw.h>
 
+#include <cue/DropdownNode.hpp>
+
 #include <rhatt/prelude.h>
 
 #include <Geode/Geode.hpp>
@@ -10,16 +12,21 @@ using namespace geode::prelude;
 using namespace cw::modcmmts;
 
 namespace cw::modcmmts {
-    struct CommentUserStatusData final {
-        std::string name;
-        std::string description;
-        std::string badgeSprite;
-    };
-
     namespace impl {
         static constexpr uint8_t MAX_REASON_CHARS = 36;
     };
 };
+
+asp::Duration StaffBanPopup::getDuration() const {
+    switch (m_durType) {
+        default: [[fallthrough]];
+
+        case DurationType::Day: return asp::Duration::fromDays(m_duration);
+        case DurationType::Minute: return asp::Duration::fromMinutes(m_duration);
+        case DurationType::Hour: return asp::Duration::fromHours(m_duration);
+        case DurationType::Week: return asp::Duration::fromWeeks(m_duration);
+    };
+}
 
 bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
     m_user = std::move(user);
@@ -41,6 +48,73 @@ bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
     setModerateLimitWarning(32);
 
     m_mainLayer->addChildAtPosition(m_inputBox, Anchor::Top, { 0.0f, -50.0f });
+
+    auto durationSelect = cue::DropdownNode::create({ 0, 0, 0, 0 }, 125.0f, 23.0f, 65.0f);
+    durationSelect->setID("duration-select");
+    durationSelect->setAnchorPoint({ 1.0f, 1.0f });
+    durationSelect->setZOrder(9);
+
+    struct DurationCell final {
+        std::string text;
+        DurationType type;
+        ccColor3B color = cw::colors::white;
+    };
+
+    auto cells = std::array{
+        DurationCell{
+            "Minutes",
+            DurationType::Minute,
+        },
+        DurationCell{
+            "Hours",
+            DurationType::Hour,
+            cw::colors::yellow,
+        },
+        DurationCell{
+            "Days",
+            DurationType::Day,
+            cw::colors::orange,
+        },
+        DurationCell{
+            "Weeks",
+            DurationType::Week,
+            cw::colors::red,
+        },
+    };
+
+    for (auto& c : cells) {
+        auto cell = BoxedLabel::create(std::move(c.text), cw::font::gold, durationSelect->getScaledContentWidth());
+        cell->setTag((int)c.type);
+        cell->setTextScale(0.5f);
+        cell->setBoxColor(c.color);
+
+        durationSelect->addCell(cell);
+    };
+
+    durationSelect->setCallback([this](auto, CCNode* cell) {
+        m_durType = (DurationType)cell->getTag();
+    });
+
+    m_mainLayer->addChildAtPosition(durationSelect, Anchor::Center);
+
+    auto submitBtn = Button::createWithNode(
+        ButtonSprite::create(fmt::format("Ban {}", m_user.username).c_str(), cw::font::gold, "GJ_button_05.png", 0.75f),
+        [this](auto) {
+            cw::showAlert(
+                "Confirm Ban",
+                fmt::format("<cr>Ban</c> <co>{}</c> for <cc>{}</c>?", m_user.username, getDuration().toHumanString()),
+                "Cancel",
+                "OK",
+                [this](auto, bool ok) {
+                    if (ok) m_callback(m_inputBox->getString(), getDuration());
+                }
+            );
+        }
+    );
+    submitBtn->setID("confirm-ban-btn");
+    submitBtn->setScale(0.875f);
+
+    m_mainLayer->addChildAtPosition(submitBtn, Anchor::Bottom);
 
     cw::addHelpButton(
         m_mainLayer,
@@ -124,7 +198,11 @@ bool StaffPopup::init(Comment cmmt, Callback&& cb) {
             "ban-user-btn",
             "particle_194_001.png",
             [this](auto) {
-                StaffBanPopup::create(m_comment.author, nullptr)->show();
+                StaffBanPopup::create(
+                    m_comment.author, [this](std::string reason, asp::Duration duration) {
+                        m_callback(CommentAction::Ban, m_comment, std::move(reason), duration);
+                    }
+                )->show();
             },
         },
     };

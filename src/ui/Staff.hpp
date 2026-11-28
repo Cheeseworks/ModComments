@@ -9,11 +9,23 @@
 namespace cw::modcmmts {
     namespace ui {
         class StaffBanPopup final : public geode::GeodePopup, private base::InputLimiter {
-            using Callback = geode::Function<void(asp::Duration)>;
+            using Callback = geode::Function<void(std::string, asp::Duration)>;
+
+            enum class DurationType : uint8_t {
+                Minute,
+                Hour,
+                Day,
+                Week,
+            };
 
         private:
             CommentUser m_user;
             Callback m_callback = nullptr;
+
+            uint64_t m_duration = 3;
+            DurationType m_durType;
+
+            asp::Duration getDuration() const;
 
         protected:
             bool init(CommentUser user, Callback&& cb);

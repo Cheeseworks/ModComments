@@ -230,10 +230,14 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
             .id = "",
         }
     );
-    bg->setColor(ColorProvider::get()->color3b(isSelf()  // :3c
-                                                   ?
-                                                   geodeTheme ? "mod-developer-item-bg"_gode : "mod-list-tab-selected-bg"_gode :
-                                                   geodeTheme ? "mod-list-tab-selected-bg"_gode : "mod-developer-item-bg"_gode));
+    bg->setColor(
+        ColorProvider::get()->color3b(
+            isSelf()  // :3c
+                ?
+                geodeTheme ? "mod-developer-item-bg"_gode : "mod-list-tab-selected-bg"_gode :
+                geodeTheme ? "mod-list-tab-selected-bg"_gode : "mod-developer-item-bg"_gode
+        )
+    );
 
     addChildAtPosition(bg, Anchor::Center);
 
