@@ -52,7 +52,7 @@ bool RulesPopup::init(Callback&& cb, bool geodeTheme) {
             0.925f
         ),
         [this](auto) {
-            createQuickPopup(
+            cw::showAlert(
                 "Confirm",
                 "<cg>Agree</c> to the <cr>rules</c>?\n<co>This pop-up will not show up again.</c>",
                 "No",

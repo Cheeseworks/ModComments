@@ -79,7 +79,7 @@ void SelfDirector::startAuth() {
 
                 auto const remaining = (ban.since + ban.until).until();
 
-                createQuickPopup(
+                cw::showAlert(
                     "Banned",
                     fmt::format(
                         "You've been <cr>banned from Mod Comments</c> due to breaking our rules.\n\n"

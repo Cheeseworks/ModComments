@@ -22,8 +22,8 @@ namespace cw::modcmmts {
             CommentUser m_user;
             Callback m_callback = nullptr;
 
-            uint64_t m_duration = 3;
-            DurationType m_durType;
+            uint64_t m_duration = 5;
+            DurationType m_durType = DurationType::Day;
 
             asp::Duration getDuration() const;
 

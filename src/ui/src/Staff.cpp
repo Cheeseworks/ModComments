@@ -14,6 +14,9 @@ using namespace cw::modcmmts;
 namespace cw::modcmmts {
     namespace impl {
         static constexpr uint8_t MAX_REASON_CHARS = 36;
+
+        static constexpr uint64_t MAX_DURATION_NUM = 128;
+        static constexpr uint64_t MIN_DURATION_NUM = 3;
     };
 };
 
@@ -32,7 +35,7 @@ bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
     m_user = std::move(user);
     m_callback = std::move(cb);
 
-    if (!GeodePopup::init(265.0f, 195.0f, GeodePopupStyle::Alt2)) return false;
+    if (!GeodePopup::init(265.0f, 160.0f, GeodePopupStyle::Alt2)) return false;
 
     setID("staff-ban-popup"_spr);
     setTitle(fmt::format("Ban {}?", m_user.username));
@@ -41,6 +44,7 @@ bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
 
     m_inputBox = TextInput::create(m_mainLayer->getContentWidth() - PADDING, "Tell us why...", cw::ui::font::chat);
     m_inputBox->setID("reason-input");
+    m_inputBox->setFontScale(0.625f);
     m_inputBox->setMaxCharCount(impl::MAX_REASON_CHARS);
     m_inputBox->setContentHeight(m_inputBox->getScaledContentHeight() * 1.5f);
 
@@ -51,12 +55,12 @@ bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
 
     m_mainLayer->addChildAtPosition(m_inputBox, Anchor::Top, { 0.0f, -50.0f });
 
-    auto durationSelect = cue::DropdownNode::create({ 0, 0, 0, 0 }, 125.0f, 23.0f, 65.0f);
+    auto durationSelect = cue::DropdownNode::create({ 20, 20, 20, 200 }, 125.0f, 25.0f, 55.0f);
     durationSelect->setID("duration-select");
     durationSelect->setAnchorPoint({ 1.0f, 1.0f });
     durationSelect->setZOrder(9);
 
-    m_mainLayer->addChildAtPosition(durationSelect, Anchor::Right, { -(PADDING / 2.0f), 12.5f });
+    m_mainLayer->addChildAtPosition(durationSelect, Anchor::Right, { -(PADDING / 2.0f), 7.5f });
 
     struct DurationCell final {
         std::string text;
@@ -100,28 +104,46 @@ bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
         m_durType = (DurationType)cell->getTag();
     });
 
-    auto numberInput = TextInput::create(75.0f, "Num");
+    auto numberInput = TextInput::create(92.5f, "Num");
     numberInput->setID("input");
     numberInput->setAnchorPoint({ 0.0f, 1.0f });
+    numberInput->setFontScale(0.5f);
+    numberInput->setContentHeight(durationSelect->getScaledContentHeight());
     numberInput->setCommonFilter(CommonFilter::Uint);
 
-    m_mainLayer->addChildAtPosition(numberInput, Anchor::Left, { PADDING / 2.0f, 12.5f });
+    m_mainLayer->addChildAtPosition(numberInput, Anchor::Left, { PADDING / 2.0f, 7.5f });
 
     numberInput->setFocusCallback([this, numberInput](TextInput::FocusState state) {
         if (state != TextInput::FocusState::Unfocused) m_duration = numFromString<uint64_t>(numberInput->getString()).unwrapOr(m_duration);
         numberInput->setString(cw::fmtNum(m_duration));
     });
 
+    auto slider = SliderNode::create([this](auto, float value) {
+        m_duration = value;
+    });
+    slider->setID("slider");
+    slider->setScale(0.825f);
+    slider->setMin(impl::MIN_DURATION_NUM);
+    slider->setMax(impl::MAX_DURATION_NUM);
+    slider->linkTextInput(numberInput, 0);
+
+    m_mainLayer->addChildAtPosition(slider, Anchor::Center, { 0.0f, -32.5f });
+
     auto submitBtn = Button::createWithNode(
         ButtonSprite::create("Confirm", cw::font::gold, "GJ_button_05.png", 0.75f),
-        [this](auto) {
+        [this, numberInput](auto) {
+            if (numberInput->getString().empty()) numberInput->setString(cw::fmtNum(m_duration));
+
             cw::showAlert(
                 "Confirm Ban",
                 fmt::format("<cr>Ban</c> <co>{}</c> for <cc>{}</c>?", m_user.username, getDuration().toHumanString()),
                 "Cancel",
                 "OK",
                 [this](auto, bool ok) {
-                    if (ok) m_callback(m_inputBox->getString(), getDuration());
+                    if (ok) {
+                        m_callback(m_inputBox->getString(), getDuration());
+                        onClose(m_closeBtn);
+                    }
                 }
             );
         }
@@ -129,7 +151,7 @@ bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
     submitBtn->setID("confirm-ban-btn");
     submitBtn->setScale(0.875f);
 
-    m_mainLayer->addChildAtPosition(submitBtn, Anchor::Bottom);
+    m_mainLayer->addChildAtPosition(submitBtn, Anchor::Bottom, { 0.0f, submitBtn->getScaledContentHeight() * 0.825f });
 
     popups::addRulesBtn(m_mainLayer);
 
@@ -217,8 +239,10 @@ bool StaffPopup::init(Comment cmmt, Callback&& cb) {
             "particle_194_001.png",
             [this](auto) {
                 StaffBanPopup::create(
-                    m_comment.author, [this](std::string reason, asp::Duration duration) {
+                    m_comment.author,
+                    [this](std::string reason, asp::Duration duration) {
                         m_callback(CommentAction::Ban, m_comment, std::move(reason), duration);
+                        onClose(m_closeBtn);
                     }
                 )->show();
             },

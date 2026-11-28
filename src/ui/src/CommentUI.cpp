@@ -148,7 +148,7 @@ void CommentItem::addBadge(CommentUserStatus type) {
     auto btn = Button::createWithSpriteFrameName(
         info.badgeSprite,
         [this, &info](auto) {
-            createQuickPopup(
+            cw::showAlert(
                 info.name.c_str(),
                 fmt::format("<cy>{}</c> {}", m_comment.author.username, info.description),
                 "OK",

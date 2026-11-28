@@ -106,7 +106,7 @@ class $nodeModify(CommentsModPopup, ModPopup) {
     void modify() {
         auto f = m_fields.self();
 
-        f->geodeTheme = Loader::get()->getLoadedMod(CW_GEODE_ID)->getSettingValue<std::string>("used-theme") != "Geometry Dash";
+        f->geodeTheme = isGeodeTheme();
 
         if (auto res = getThisID(); res.isOk()) f->id = std::move(res).unwrap();
         if (f->id.empty()) return;

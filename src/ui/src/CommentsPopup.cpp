@@ -14,15 +14,15 @@ using namespace cw::modcmmts;
 namespace cw::modcmmts {
     namespace impl {
 #ifdef CW_TESTING
-#define MC_COMMENT_WAIT 5
-#define MC_REFRESH_WAIT 1
+#define CW_MC_COMMENT_WAIT 5
+#define CW_MC_REFRESH_WAIT 1
 #else
-#define MC_COMMENT_WAIT 30
-#define MC_REFRESH_WAIT 2
+#define CW_MC_COMMENT_WAIT 30
+#define CW_MC_REFRESH_WAIT 2
 #endif
 
-        static constexpr uint8_t COMMENT_WAIT = MC_COMMENT_WAIT;
-        static constexpr uint8_t REFRESH_WAIT = MC_REFRESH_WAIT;
+        static constexpr uint8_t COMMENT_WAIT = CW_MC_COMMENT_WAIT;
+        static constexpr uint8_t REFRESH_WAIT = CW_MC_REFRESH_WAIT;
 
         static constexpr uint8_t MAX_COMMENT_CHARS = 192;
 
@@ -74,7 +74,7 @@ bool CommentModNode::init(std::string id, std::optional<GeodeMod> mod) {
 
     if (mod.has_value()) {
         m_dataOk = true;
-        m_data = std::move(mod).value();
+        m_data = std::move(*mod);
     };
 
     if (!CCNode::init()) return false;
@@ -280,6 +280,7 @@ void CommentsPopup::refreshComments(bool skipCooldown) {
 
                             case CommentAction::Delete: return onDelete(cmmt);
                             case CommentAction::Report: return onReport(cmmt);
+                            case CommentAction::Ban: return onBan(cmmt, std::move(*reason), *duration);
                         };
                     });
 
@@ -615,7 +616,7 @@ void CommentsPopup::onSend(Button* sender) {
     if (elapsed < impl::COMMENT_WAIT) {
         auto remaining = impl::COMMENT_WAIT - elapsed;
 
-        createQuickPopup(
+        cw::showAlert(
             "Slow Down!",
             fmt::format("You must <co>wait {} {} before sending your next comment</c>!", remaining, str::plurals::appendS("second", remaining)),
             "OK",
@@ -660,7 +661,7 @@ void CommentsPopup::onSend(Button* sender) {
 void CommentsPopup::onDelete(Comment const& cmmt) {
     if (m_commentActionTask.isPending()) return;
 
-    createQuickPopup(
+    cw::showAlert(
         "Delete Comment",
         "<cr>Delete</c> this comment?",
         "Cancel",
@@ -711,6 +712,32 @@ void CommentsPopup::onReport(Comment const& cmmt) {
         m_geodeTheme
     )
         ->show();
+}
+
+void CommentsPopup::onBan(Comment const& cmmt, std::string reason, asp::Duration duration) {
+    auto popup = ProcessPopup::create("Requesting ban...");
+    popup->show();
+
+    popup->setCloseCallback([this](ProcessPopup* sender, ProcessPopup::State state) {
+        if (state == ProcessPopup::State::Ongoing) {
+            m_commentActionTask.cancel();
+            Notification::create("Ban canceled", NotificationIcon::Error)->show();
+        };
+
+        if (state == ProcessPopup::State::Success) refreshComments();
+
+        sender->removeFromParent();
+    });
+
+    m_commentActionTask.spawn(
+        banCommentUser(cmmt.author.id, std::move(reason), duration),
+        [&cmmt, popup = Ref(popup)](cw::WebRes res) {
+            if (res.isErr()) return popup->setFailure(fmt::format("Failed to ban user ({})", res.getCode()));
+
+            SelfDirector::get()->setReport(cmmt.id);
+            popup->setSuccess("Banned successfully");
+        }
+    );
 }
 
 void CommentsPopup::onExit() {

@@ -101,6 +101,7 @@ namespace cw::modcmmts {
         protected:
             void onDelete(Comment const& cmmt);
             void onReport(Comment const& cmmt);
+            void onBan(Comment const& cmmt, std::string reason, asp::Duration duration);
 
             void onSend(geode::Button* sender);
 
