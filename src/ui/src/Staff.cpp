@@ -66,6 +66,7 @@ bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
         DurationCell{
             "Minutes",
             DurationType::Minute,
+            cw::colors::lime,
         },
         DurationCell{
             "Hours",
