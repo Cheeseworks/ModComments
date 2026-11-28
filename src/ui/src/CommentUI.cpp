@@ -72,8 +72,10 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
         0.825f
     );
 
-    auto cmmtNode = CommentItem::create(cmmt, m_mainLayer->getScaledContentWidth() * 0.925f, false, geodeTheme);
-    m_mainLayer->addChildAtPosition(cmmtNode, Anchor::Center, { 0.0f, -12.5f });
+    auto cell = CommentItem::create(cmmt, m_mainLayer->getScaledContentWidth() * 0.925f, false, geodeTheme);
+    cell->setID("comment-cell");
+
+    m_mainLayer->addChildAtPosition(cell, Anchor::Center, { 0.0f, -15.0f });
 
     auto label = Label::createRich("If you believe this user's comment <cr>breaks our rules</c>, <cy>describe why using the text box below</c>. Thank you!", cw::ui::font::chat);
     label->setScale(0.675f);
@@ -93,7 +95,7 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
     setMildLimitWarning(34);
     setModerateLimitWarning(42);
 
-    m_mainLayer->addChildAtPosition(m_inputBox, Anchor::Center, { 0.0f, -27.5f });
+    m_mainLayer->addChildAtPosition(m_inputBox, Anchor::Center, { 0.0f, -37.5f });
 
     auto warning = Label::createRich("<co>False reports</c> will most likely result in <cr>action taken on your own account</c>, please be mindful of the reports you send!", cw::ui::font::chat);
     warning->setScale(0.5f);
@@ -114,7 +116,7 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
             auto inputStr = str::trim(m_inputBox->getString());
 
             if (inputStr.size() > impl::MAX_REPORT_CHARS) return Notification::create(fmt::format("Comment exceeds {} characters", impl::MAX_REPORT_CHARS), NotificationIcon::Warning)->show();
-            if (inputStr.empty()) return Notification::create("Comment cannot be empty.", NotificationIcon::Error)->show();
+            if (inputStr.empty()) return Notification::create("Report cannot be empty.", NotificationIcon::Error)->show();
 
             m_callback(cmmt, std::move(inputStr));
         }
@@ -124,20 +126,7 @@ bool CommentReportPopup::init(Comment const& cmmt, Callback&& cb, bool geodeThem
 
     m_mainLayer->addChildAtPosition(sendBtn, Anchor::Bottom);
 
-    auto rulesBtn = Button::createWithNode(
-        CircleButtonSprite::createWithSpriteFrameName(
-            "news.png"_gode,
-            0.75f,
-            geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green
-        ),
-        [](Button* sender) {
-            popups::showRules();
-        }
-    );
-    rulesBtn->setID("comment-rules-btn");
-    rulesBtn->setScale(0.625f);
-
-    m_mainLayer->addChildAtPosition(rulesBtn, Anchor::BottomRight, {}, false);
+    popups::addRulesBtn(m_mainLayer);
 
     return true;
 }
@@ -291,7 +280,7 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
 
         m_userMenu->addChild(mentionLabel);
 
-        bg->setColor({ 100, 200, 255 });
+        bg->setColor(cw::colors::teal);
     };
 
     m_userMenu->updateLayout();
@@ -345,7 +334,7 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
                         StaffPopup::create(
                             m_comment,
                             [this](CommentAction action, Comment const& cmmt, std::optional<std::string> reason, std::optional<asp::Duration> duration) {
-                                m_callback(action, cmmt);
+                                m_callback(action, cmmt, std::move(reason), duration);
                             }
                         )->show();
                     }
@@ -355,7 +344,7 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
                 actionBtn = Button::createWithSpriteFrameName(
                     "GJ_trashBtn_001.png",
                     [this](auto) {
-                        m_callback(CommentAction::Delete, m_comment);
+                        m_callback(CommentAction::Delete, m_comment, std::nullopt, std::nullopt);
                     }
                 );
                 actionBtn->setID("delete-comment-btn");
@@ -367,7 +356,7 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
                         geodeTheme ? CircleBaseColor::DarkPurple : CircleBaseColor::Green
                     ),
                     [this](auto) {
-                        m_callback(CommentAction::Report, m_comment);
+                        m_callback(CommentAction::Report, m_comment, std::nullopt, std::nullopt);
                     }
                 );
                 actionBtn->setID("report-comment-btn");
@@ -383,7 +372,7 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
         addVoteNodes(m_actionMenu, m_likeBtn, m_likeLabel, CommentVote::Like);
     };
 
-    auto const timePosted = *asp::SystemTime::now().durationSince(m_comment.created);
+    auto const timePosted = m_comment.created.elapsed();
     std::string timeTxt = (timePosted.seconds() < 3) ? "Just now" : fmt::format("{} ago", timePosted.toHumanString());
 
     auto time = Label::create(std::move(timeTxt), cw::ui::font::chat);

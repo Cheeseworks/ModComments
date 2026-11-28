@@ -15,6 +15,7 @@
 namespace cw::modcmmts {
     namespace popups {
         void showRules();
+        geode::Button* addRulesBtn(cocos2d::CCNode* to);
     };
 
     using namespace ui;

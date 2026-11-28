@@ -212,3 +212,21 @@ void popups::showRules() {
     )
         ->show();
 }
+
+Button* popups::addRulesBtn(CCNode* to) {
+    auto btn = Button::createWithNode(
+        EditorButtonSprite::createWithSpriteFrameName(
+            "particle_218_001.png",
+            0.75f,
+            EditorBaseColor::DarkGray
+        ),
+        [](Button* sender) {
+            popups::showRules();
+        }
+    );
+    btn->setID("comment-rules-btn");
+    btn->setScale(0.75f);
+
+    to->addChildAtPosition(btn, Anchor::BottomLeft, btn->getScaledContentSize() * 0.825f, false);
+    return btn;
+}

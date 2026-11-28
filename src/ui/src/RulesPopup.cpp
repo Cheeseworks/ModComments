@@ -58,7 +58,7 @@ bool RulesPopup::init(Callback&& cb, bool geodeTheme) {
                 "No",
                 "Yes",
                 [this](auto, bool ok) {
-                    return m_callback(this, ok);
+                    m_callback(this, ok);
                 }
             );
         }

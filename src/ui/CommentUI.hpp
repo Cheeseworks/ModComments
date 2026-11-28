@@ -32,7 +32,7 @@ namespace cw::modcmmts {
         };
 
         class CommentItem final : public cocos2d::CCNode {
-            using Callback = geode::Function<void(CommentAction, Comment const&)>;
+            using Callback = geode::Function<void(CommentAction, Comment const&, std::optional<std::string>, std::optional<asp::Duration>)>;
 
         private:
             Comment m_comment;

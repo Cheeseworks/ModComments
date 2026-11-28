@@ -13,8 +13,16 @@ using namespace cw::modcmmts;
 
 namespace cw::modcmmts {
     namespace impl {
-        static constexpr uint8_t COMMENT_WAIT = 30;
-        static constexpr uint8_t REFRESH_WAIT = 2;
+#ifdef CW_TESTING
+#define MC_COMMENT_WAIT 5
+#define MC_REFRESH_WAIT 1
+#else
+#define MC_COMMENT_WAIT 30
+#define MC_REFRESH_WAIT 2
+#endif
+
+        static constexpr uint8_t COMMENT_WAIT = MC_COMMENT_WAIT;
+        static constexpr uint8_t REFRESH_WAIT = MC_REFRESH_WAIT;
 
         static constexpr uint8_t MAX_COMMENT_CHARS = 192;
 
@@ -217,11 +225,12 @@ arc::Future<cw::WebRes> CommentsPopup::sendComment(std::string content) {
 
 void CommentsPopup::updatePageLabel() {
     m_pageLabel->setText(fmt::format("Page {}/{} ({} Total)", m_page, m_maxPage, m_maxComments));
+    m_pageBtnSprite->setString(cw::fmtNum(m_page).c_str());
 }
 
 void CommentsPopup::refreshComments(bool skipCooldown) {
     if (!skipCooldown) {
-        auto elapsed = asp::Instant::now().durationSince(s_lastRefresh).seconds();
+        auto elapsed = s_lastRefresh.elapsed().seconds();
         if (elapsed < impl::REFRESH_WAIT) return;
     };
 
@@ -265,7 +274,7 @@ void CommentsPopup::refreshComments(bool skipCooldown) {
                         true,
                         m_geodeTheme
                     );
-                    cell->setActionCallback([this](CommentAction act, Comment const& cmmt) {
+                    cell->setActionCallback([this](CommentAction act, Comment const& cmmt, std::optional<std::string> reason, std::optional<asp::Duration> duration) {
                         switch (act) {
                             default: return;
 
@@ -602,7 +611,7 @@ void CommentsPopup::onSend(Button* sender) {
 
     m_inputBox->unfocus();
 
-    auto elapsed = asp::Instant::now().durationSince(s_lastComment).seconds();
+    auto elapsed = s_lastComment.elapsed().seconds();
     if (elapsed < impl::COMMENT_WAIT) {
         auto remaining = impl::COMMENT_WAIT - elapsed;
 
@@ -677,15 +686,25 @@ void CommentsPopup::onReport(Comment const& cmmt) {
         cmmt,
         [this](Comment const& cmmt, std::string reason) {
             if (auto popup = CCScene::get()->getChildByType<CommentReportPopup>()) cue::resetNode(popup);
-            Notification::create("Reporting comment...", NotificationIcon::Loading)->show();
+            auto popup = ProcessPopup::create("Sending report...");
+            popup->show();
+
+            popup->setCloseCallback([this](ProcessPopup* sender, ProcessPopup::State state) {
+                if (state == ProcessPopup::State::Ongoing) {
+                    m_commentActionTask.cancel();
+                    Notification::create("Canceled report", NotificationIcon::Error)->show();
+                };
+
+                sender->removeFromParent();
+            });
 
             m_commentActionTask.spawn(
                 reportComment(cmmt.id, std::move(reason)),
-                [&cmmt](cw::WebRes res) {
-                    if (res.isErr()) return Notification::create(fmt::format("Failed to report comment ({})", res.getCode()), NotificationIcon::Error)->show();
+                [&cmmt, popup = Ref(popup)](cw::WebRes res) {
+                    if (res.isErr()) return popup->setFailure(fmt::format("Failed to report comment ({})", res.getCode()));
 
                     SelfDirector::get()->setReport(cmmt.id);
-                    Notification::create("Reported successfully", NotificationIcon::Success)->show();
+                    popup->setSuccess("Reported successfully");
                 }
             );
         },

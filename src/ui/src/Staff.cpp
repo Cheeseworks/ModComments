@@ -37,7 +37,9 @@ bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
     setID("staff-ban-popup"_spr);
     setTitle(fmt::format("Ban {}?", m_user.username));
 
-    m_inputBox = TextInput::create(m_mainLayer->getContentWidth() - 37.5f, "Tell us why...", cw::ui::font::chat);
+    static constexpr auto PADDING = 37.5f;
+
+    m_inputBox = TextInput::create(m_mainLayer->getContentWidth() - PADDING, "Tell us why...", cw::ui::font::chat);
     m_inputBox->setID("reason-input");
     m_inputBox->setMaxCharCount(impl::MAX_REASON_CHARS);
     m_inputBox->setContentHeight(m_inputBox->getScaledContentHeight() * 1.5f);
@@ -54,7 +56,7 @@ bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
     durationSelect->setAnchorPoint({ 1.0f, 1.0f });
     durationSelect->setZOrder(9);
 
-    m_mainLayer->addChildAtPosition(durationSelect, Anchor::Center, { -10.0f, 0.0f });
+    m_mainLayer->addChildAtPosition(durationSelect, Anchor::Right, { -(PADDING / 2.0f), 12.5f });
 
     struct DurationCell final {
         std::string text;
@@ -98,8 +100,20 @@ bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
         m_durType = (DurationType)cell->getTag();
     });
 
+    auto numberInput = TextInput::create(75.0f, "Num");
+    numberInput->setID("input");
+    numberInput->setAnchorPoint({ 0.0f, 1.0f });
+    numberInput->setCommonFilter(CommonFilter::Uint);
+
+    m_mainLayer->addChildAtPosition(numberInput, Anchor::Left, { PADDING / 2.0f, 12.5f });
+
+    numberInput->setFocusCallback([this, numberInput](TextInput::FocusState state) {
+        if (state != TextInput::FocusState::Unfocused) m_duration = numFromString<uint64_t>(numberInput->getString()).unwrapOr(m_duration);
+        numberInput->setString(cw::fmtNum(m_duration));
+    });
+
     auto submitBtn = Button::createWithNode(
-        ButtonSprite::create(fmt::format("Ban {}", m_user.username).c_str(), cw::font::gold, "GJ_button_05.png", 0.75f),
+        ButtonSprite::create("Confirm", cw::font::gold, "GJ_button_05.png", 0.75f),
         [this](auto) {
             cw::showAlert(
                 "Confirm Ban",
@@ -116,6 +130,8 @@ bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
     submitBtn->setScale(0.875f);
 
     m_mainLayer->addChildAtPosition(submitBtn, Anchor::Bottom);
+
+    popups::addRulesBtn(m_mainLayer);
 
     cw::addHelpButton(
         m_mainLayer,
@@ -143,7 +159,7 @@ bool StaffPopup::init(Comment cmmt, Callback&& cb) {
     if (!GeodePopup::init(295.0f, 170.0f, GeodePopupStyle::Alt)) return false;
 
     setID("staff-popup"_spr);
-    setTitle("Mod Comments Staff Panel");
+    setTitle("Moderation Panel");
 
     auto cell = CommentItem::create(m_comment, m_mainLayer->getContentWidth() - 37.5f, false);
     cell->setID("comment-cell");
@@ -159,9 +175,10 @@ bool StaffPopup::init(Comment cmmt, Callback&& cb) {
     m_mainLayer->addChildAtPosition(label, Anchor::Center, { 0.0f, -5.0f });
 
     auto layout = RowLayout::create()
-                      ->setGap(5.0f)
+                      ->setGap(1.25f)
+                      ->setAxisAlignment(AxisAlignment::Even)
                       ->setDefaultScaleLimits(0.125f, 0.75f)
-                      ->setAutoGrowAxis(0.0f)
+                      ->setAutoGrowAxis(m_mainLayer->getScaledContentWidth() / 2.5f)
                       ->setGrowCrossAxis(true);
 
     auto menu = CCNode::create();
@@ -170,7 +187,7 @@ bool StaffPopup::init(Comment cmmt, Callback&& cb) {
     menu->setZOrder(9);
     menu->setLayout(layout);
 
-    m_mainLayer->addChildAtPosition(menu, Anchor::Bottom, { 0.0f, 25.0f });
+    m_mainLayer->addChildAtPosition(menu, Anchor::Bottom, { 0.0f, 27.5f });
 
     struct ActionButton final {
         std::string id;
@@ -232,7 +249,9 @@ bool StaffPopup::init(Comment cmmt, Callback&& cb) {
         }
     );
 
-    m_mainLayer->addChildAtPosition(bg, Anchor::Bottom, { 0.0f, 25.0f });
+    m_mainLayer->addChildAtPosition(bg, Anchor::Bottom, { 0.0f, 27.5f });
+
+    popups::addRulesBtn(m_mainLayer);
 
     cw::addHelpButton(
         m_mainLayer,
