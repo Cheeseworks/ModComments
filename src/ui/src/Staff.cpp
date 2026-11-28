@@ -54,6 +54,8 @@ bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
     durationSelect->setAnchorPoint({ 1.0f, 1.0f });
     durationSelect->setZOrder(9);
 
+    m_mainLayer->addChildAtPosition(durationSelect, Anchor::Center, { -10.0f, 0.0f });
+
     struct DurationCell final {
         std::string text;
         DurationType type;
@@ -94,8 +96,6 @@ bool StaffBanPopup::init(CommentUser user, Callback&& cb) {
     durationSelect->setCallback([this](auto, CCNode* cell) {
         m_durType = (DurationType)cell->getTag();
     });
-
-    m_mainLayer->addChildAtPosition(durationSelect, Anchor::Center);
 
     auto submitBtn = Button::createWithNode(
         ButtonSprite::create(fmt::format("Ban {}", m_user.username).c_str(), cw::font::gold, "GJ_button_05.png", 0.75f),

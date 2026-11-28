@@ -19,7 +19,7 @@ Result<UserIcons> matjson::Serialize<UserIcons>::fromJson(matjson::Value const& 
     GEODE_UNWRAP_INTO(out.colorGlow, value["color_glow"].asUInt());
     GEODE_UNWRAP_INTO(out.useGlow, value["use_glow"].asBool());
 
-    out.iconType = static_cast<IconType>(iconType);
+    out.iconType = (IconType)iconType;
 
     return Ok(std::move(out));
 }
@@ -27,7 +27,7 @@ Result<UserIcons> matjson::Serialize<UserIcons>::fromJson(matjson::Value const& 
 matjson::Value matjson::Serialize<UserIcons>::toJson(UserIcons const& value) {
     Value out;
     out["icon"] = value.icon;
-    out["icon_type"] = static_cast<int8_t>(value.iconType);
+    out["icon_type"] = (uint8_t)value.iconType;
     out["color1"] = value.color1;
     out["color2"] = value.color2;
     out["color_glow"] = value.colorGlow;
@@ -48,7 +48,7 @@ Result<CommentUser> matjson::Serialize<CommentUser>::fromJson(matjson::Value con
     GEODE_UNWRAP_INTO(out.staff, value["staff"].asBool());
 
     GEODE_UNWRAP_INTO(auto gdMod, value["gd_mod"].asInt());
-    out.gdMod = static_cast<ModLevel>(gdMod);
+    out.gdMod = (ModLevel)gdMod;
 
     GEODE_UNWRAP_INTO(auto createdAt, value["created_at"].asInt());
     out.created = asp::SystemTime::fromUnix(createdAt);
@@ -72,7 +72,7 @@ matjson::Value matjson::Serialize<CommentUser>::toJson(CommentUser const& value)
     out["id"] = value.id;
     out["username"] = value.username;
     out["staff"] = value.staff;
-    out["gd_mod"] = static_cast<int>(value.gdMod);
+    out["gd_mod"] = (int)value.gdMod;
     out["created_at"] = value.created.timeSinceEpoch().seconds();
 
     return out;

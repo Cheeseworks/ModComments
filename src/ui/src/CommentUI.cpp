@@ -187,7 +187,7 @@ void CommentItem::addVoteNodes(CCNode* to, Button*& btn, Ref<Label>& label, Comm
         like ? "GJ_likesIcon_001.png" : "GJ_dislikesIcon_001.png",
         [this, type](auto) {
             log::debug("current vote is {}", m_comment.myVote);
-            voteCallback((m_comment.myVote == static_cast<int8_t>(type)) ? CommentVote::None : type);
+            voteCallback((m_comment.myVote == (int8_t)type) ? CommentVote::None : type);
         }
     );
     btn->setID(like ? "like-btn" : "dislike-btn");
@@ -205,7 +205,7 @@ arc::Future<cw::WebRes> CommentItem::sendVote(CommentVote vote) {
 
     matjson::Value body;
     body["comment"] = m_comment.id;
-    body["vote"] = static_cast<int8_t>(vote);
+    body["vote"] = (int8_t)vote;
 
     auto req = (co_await request::withAuthCo(std::move(token)))
                    .bodyJSON(body);
@@ -224,7 +224,7 @@ bool CommentItem::init(Comment cmmt, float width, bool buttons, bool geodeTheme)
     auto bg = cue::createBackground(
         getScaledContentSize(),
         {
-            .opacity = static_cast<uint8_t>(isSelf() ? 125 : 100),
+            .opacity = (uint8_t)(isSelf() ? 125 : 100),
             .texture = "white-square.png"_gode,
             .zOrder = -1,
             .id = "",

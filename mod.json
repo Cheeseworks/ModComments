@@ -41,11 +41,6 @@
                 "refresh": "Refresh Login"
             },
             "description": "Manually refresh your authorization status."
-        },
-        "ui": {
-            "type": "title",
-            "name": "Interface",
-            "description": "Customize the comment interface."
         }
     },
     "early-load": false

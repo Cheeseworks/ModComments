@@ -13,11 +13,11 @@ UserIcons players::getUserIcons() {
     auto gm = GameManager::sharedState();
 
     return UserIcons{
-        static_cast<uint16_t>(gm->activeIconForType(gm->m_playerIconType)),
+        (uint16_t)gm->activeIconForType(gm->m_playerIconType),
         gm->m_playerIconType,
-        static_cast<uint8_t>(gm->getPlayerColor()),
-        static_cast<uint8_t>(gm->getPlayerColor2()),
-        static_cast<uint8_t>(gm->getPlayerGlowColor()),
+        (uint8_t)gm->getPlayerColor(),
+        (uint8_t)gm->getPlayerColor2(),
+        (uint8_t)gm->getPlayerGlowColor(),
         gm->m_playerGlow,
     };
 }
