@@ -201,10 +201,20 @@ arc::Future<cw::WebRes> CommentsPopup::banCommentUser(int id, std::string reason
     co_return cw::request::parse(co_await req.post("/v2/bans/ban"_api));
 }
 
+constexpr ZStringView CommentsPopup::getSortString(SortOption type) const noexcept {
+    switch (type) {
+        default: [[fallthrough]];
+
+        case SortOption::Recent: return "recent";
+        case SortOption::Likes: return "likes";
+    };
+}
+
 arc::Future<cw::WebRes> CommentsPopup::getComments() {
     auto req = cw::request::base()
                    .param("mod", m_modId)
-                   .param("page", m_page);
+                   .param("page", m_page)
+                   .param("sort_by", getSortString(m_sortBy));
 
     co_return cw::request::parse(co_await req.get("/v2/comments/get"_api));
 }
@@ -225,7 +235,7 @@ arc::Future<cw::WebRes> CommentsPopup::sendComment(std::string content) {
 
 void CommentsPopup::updatePageLabel() {
     m_pageLabel->setText(fmt::format("Page {}/{} ({} Total)", m_page, m_maxPage, m_maxComments));
-    m_pageBtnSprite->setString(cw::fmtNum(m_page).c_str());
+    m_pageBtnLabel->setText(cw::fmtNum(m_page));
 }
 
 void CommentsPopup::refreshComments(bool skipCooldown) {
@@ -516,20 +526,58 @@ bool CommentsPopup::init(std::string modId, bool geodeTheme) {
         onSend(sendBtn);
     });
 
-    m_pageBtnSprite = ButtonSprite::create(
-        cw::fmtNum(m_page).c_str(),
-        cw::font::big,
-        geodeTheme ? "GE_button_05.png"_gode : "GJ_button_01.png",
-        0.75f
+    auto pageMenuLayout = ColumnLayout::create()
+                              ->setGap(2.5f)
+                              ->setDefaultScaleLimits(0.125f, 0.675f)
+                              ->setAutoGrowAxis(0.0f)
+                              ->setGrowCrossAxis(true)
+                              ->setAxisReverse(true);
+
+    auto pageMenu = CCNode::create();
+    pageMenu->setID("page-menu");
+    pageMenu->setAnchorPoint({ 0.0f, 1.0f });
+    pageMenu->setLayout(pageMenuLayout);
+
+    m_mainLayer->addChildAtPosition(pageMenu, Anchor::TopLeft, { 7.5f, -25.0f });
+
+    m_pageBtnLabel = Label::create(cw::fmtNum(m_page), cw::font::big);
+    m_pageBtnLabel->setAlignment(Label::Alignment::Center);
+
+    auto pageBtnSprite = EditorButtonSprite::create(
+        m_pageBtnLabel,
+        geodeTheme ? EditorBaseColor::DarkGray : EditorBaseColor::Aqua
     );
+
+    m_pageBtnLabel->setLimitLabelWidth(pageBtnSprite->getContentWidth() - 2.5f, 0.675f);
 
     auto pageBtn = Button::createWithNode(
-        m_pageBtnSprite
+        pageBtnSprite
     );
     pageBtn->setID("jump-to-page-btn");
-    pageBtn->setScale(0.625f);
 
-    m_mainLayer->addChildAtPosition(pageBtn, Anchor::TopLeft, { 20.0f, -50.0f });
+    auto sortToggle = Toggler::create(
+        EditorButtonSprite::createWithSpriteFrameName(
+            "particle_48_001.png",
+            0.675f,
+            geodeTheme ? EditorBaseColor::DarkGray : EditorBaseColor::Aqua
+        ),
+        EditorButtonSprite::createWithSpriteFrameName(
+            "particle_197_001.png",
+            0.675f,
+            geodeTheme ? EditorBaseColor::DarkGray : EditorBaseColor::Aqua
+        ),
+        [this](auto, bool toggled) {
+            m_sortBy = toggled ? SortOption::Recent : SortOption::Likes;
+            refreshComments(true);
+        }
+    );
+    sortToggle->setID("toggle-sorting-btn");
+    sortToggle->setToggled(true);
+
+    pageMenu->addChild(pageBtn);
+    pageMenu->addChild(sortToggle);
+
+    pageMenu->updateLayout();
 
     auto linkBtnMenuLayout = ColumnLayout::create()
                                  ->setGap(2.0f)

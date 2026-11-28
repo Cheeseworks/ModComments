@@ -49,6 +49,11 @@ namespace cw::modcmmts {
         };
 
         class CommentsPopup final : public geode::GeodePopup, private base::InputLimiter {
+            enum class SortOption : uint8_t {
+                Recent,
+                Likes,
+            };
+
         private:
             std::string m_modId;
             bool m_geodeTheme = false;
@@ -61,11 +66,15 @@ namespace cw::modcmmts {
             uint64_t m_maxPage = 1;
             uint64_t m_maxComments = 0;
 
+            SortOption m_sortBy = SortOption::Recent;
+
+            constexpr geode::ZStringView getSortString(SortOption type) const noexcept;
+
             geode::Button* m_pageNextBtn = nullptr;
             geode::Button* m_pagePrevBtn = nullptr;
             geode::Label* m_pageLabel = nullptr;
 
-            geode::Ref<ButtonSprite> m_pageBtnSprite = nullptr;
+            geode::Ref<geode::Label> m_pageBtnLabel = nullptr;
 
             geode::ScrollLayer* m_commentList = nullptr;
             cocos2d::CCNode* m_commentMenu = nullptr;

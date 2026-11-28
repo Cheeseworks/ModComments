@@ -12,6 +12,8 @@
 
 #include <Geode/Geode.hpp>
 
+#include <Geode/ui/Toggler.hpp>
+
 namespace cw::modcmmts {
     namespace popups {
         void showRules();
